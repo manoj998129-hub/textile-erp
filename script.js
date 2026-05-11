@@ -8,9 +8,10 @@ let unsubscribeRecNo = null;
 // BIM State Tracker
 let machineBimStates = JSON.parse(localStorage.getItem('machine_bim_states') || '{}');
 
-// Recent Saves State
-let recentSaves = [];
-let editingRecentId = null;
+// Recent Records Pagination State
+let recentRecordsCursor = [];
+let currentPage = 0;
+const PAGE_SIZE = 5;
 
 // DOM Elements
 const connectionStatus = document.getElementById('connection-status');
@@ -81,6 +82,19 @@ function initUI() {
         document.getElementById('auth-config-form').addEventListener('submit', handleAuthUpdate);
     }
     loadNoteSuggestions();
+
+    // Pagination Listeners
+    document.getElementById('btn-recent-prev').addEventListener('click', () => {
+        if (currentPage > 0) {
+            currentPage--;
+            fetchRecentRecords();
+        }
+    });
+
+    document.getElementById('btn-recent-next').addEventListener('click', () => {
+        currentPage++;
+        fetchRecentRecords();
+    });
 }
 
 function checkAuth() {
@@ -187,10 +201,102 @@ async function initFirebase() {
         db = firebase.firestore();
         try { await db.enablePersistence({ synchronizeTabs: true }); } catch (err) { console.log('Persistence error:', err); }
         startListeners();
+        loadDashboardAnalytics(true);
+        setInterval(() => loadDashboardAnalytics(), 60000);
+        fetchRecentRecords(true);
         showToast('Connected to Database', 'success');
     } catch (error) {
         console.error("Firebase init error:", error);
         showToast('Database connection failed. Please check your config.', 'error');
+    }
+}
+
+// Dashboard Caching
+let dashboardCache = null;
+let lastDashboardSync = 0;
+
+async function loadDashboardAnalytics(force = false) {
+    if (!db) return;
+    
+    const now = Date.now();
+    if (!force && dashboardCache && (now - lastDashboardSync < 30000)) {
+        renderDashboardAnalytics(dashboardCache);
+        return;
+    }
+
+    try {
+        const today = new Date(); today.setHours(0,0,0,0);
+        
+        const yesterdayStart = new Date(today); yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+        const yesterdayEnd = new Date(today); yesterdayEnd.setMilliseconds(-1);
+        
+        const dayBeforeStart = new Date(yesterdayStart); dayBeforeStart.setDate(dayBeforeStart.getDate() - 1);
+        const dayBeforeEnd = new Date(yesterdayStart); dayBeforeEnd.setMilliseconds(-1);
+
+        const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+
+        const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+
+        const [ySnap, dbSnap, cmSnap, lmSnap] = await Promise.all([
+            db.collection('Production').where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(yesterdayStart)).where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(yesterdayEnd)).get(),
+            db.collection('Production').where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(dayBeforeStart)).where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(dayBeforeEnd)).get(),
+            db.collection('Production').where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(currentMonthStart)).where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(currentMonthEnd)).get(),
+            db.collection('Production').where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(lastMonthStart)).where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(lastMonthEnd)).get()
+        ]);
+
+        let yTotal = 0; ySnap.forEach(d => yTotal += (d.data().meter || 0));
+        let dbTotal = 0; dbSnap.forEach(d => dbTotal += (d.data().meter || 0));
+        let cmTotal = 0; cmSnap.forEach(d => cmTotal += (d.data().meter || 0));
+        let lmTotal = 0; lmSnap.forEach(d => lmTotal += (d.data().meter || 0));
+
+        dashboardCache = { yTotal, dbTotal, cmTotal, lmTotal };
+        lastDashboardSync = now;
+        
+        renderDashboardAnalytics(dashboardCache);
+        
+        const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        document.getElementById('last-sync-time').textContent = `Last updated: ${timeStr}`;
+    } catch(err) {
+        console.error('Error loading dashboard analytics:', err);
+    }
+}
+
+window.loadDashboardAnalytics = loadDashboardAnalytics;
+
+function renderDashboardAnalytics(data) {
+    const { yTotal, dbTotal, cmTotal, lmTotal } = data;
+
+    let compareHtml = '';
+    let percentStr = '';
+    if (dbTotal > 0) {
+        const diff = yTotal - dbTotal;
+        const pct = Math.round((Math.abs(diff) / dbTotal) * 100);
+        if (diff > 0) {
+            compareHtml = `<span class="indicator-increase">↑</span>`;
+            percentStr = `<span class="compare-percent text-normal">+${pct}% from yesterday</span>`;
+        } else if (diff < 0) {
+            compareHtml = `<span class="indicator-decrease">↓</span>`;
+            percentStr = `<span class="compare-percent text-danger">-${pct}% from yesterday</span>`;
+        } else {
+            percentStr = `<span class="compare-percent">0% from yesterday</span>`;
+        }
+    }
+
+    updateElementValue('dashboard-prev-day', `<strong>${yTotal.toFixed(1)}m</strong> ${compareHtml} ${percentStr}`);
+    updateElementValue('dashboard-current-month', `<strong>${cmTotal.toFixed(1)}m</strong>`);
+    updateElementValue('dashboard-last-month', `<strong>${lmTotal.toFixed(1)}m</strong>`);
+}
+
+function updateElementValue(id, html) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.innerHTML !== html) {
+        el.innerHTML = html;
+        el.classList.remove('value-updated');
+        void el.offsetWidth;
+        el.classList.add('value-updated');
     }
 }
 
@@ -220,32 +326,14 @@ function startListeners() {
         .orderBy('timestamp', 'asc')
         .onSnapshot((snapshot) => {
             let grandTotal = 0;
-            const qualityTotals = {};
-            
             snapshot.forEach(doc => {
-                const data = doc.data();
-                const m = data.meter || 0;
-                grandTotal += m;
-                
-                const q = data.quality || 'Unknown';
-                if (!qualityTotals[q]) qualityTotals[q] = 0;
-                qualityTotals[q] += m;
+                grandTotal += (doc.data().meter || 0);
             });
-            
-            dailyQualitySummary.innerHTML = `<strong>${grandTotal.toFixed(1)}m</strong>`;
-            
-            let breakdownHtml = '';
-            for (const [q, total] of Object.entries(qualityTotals)) {
-                breakdownHtml += `<tr>
-                    <td data-label="Quality" style="padding: 4px 0; color: #4b5563;"><strong>${q}</strong></td>
-                    <td data-label="Total" style="padding: 4px 0; text-align: right; font-weight: bold;">${total.toFixed(1)}m</td>
-                </tr>`;
-            }
-            if (breakdownHtml === '') breakdownHtml = '<tr><td class="text-muted py-2">No production yet today.</td></tr>';
-            
-            const breakdownList = document.getElementById('quality-breakdown-list');
-            if(breakdownList) breakdownList.innerHTML = breakdownHtml;
+            updateElementValue('daily-quality-summary', `<strong>${grandTotal.toFixed(1)}m</strong>`);
         });
+
+    loadQualityBreakdown(currentQualityDate);
+    updateQualityDateDisplay();
 
     unsubscribeQuality = db.collection('QualityMaster')
         .orderBy('timestamp', 'desc')
@@ -298,6 +386,16 @@ function resetForm() {
     // Reset dropdown
     document.getElementById('bim-status').value = 'BIM Running';
     document.getElementById('bim-status').disabled = false;
+    
+    // Set Date default to today
+    const dateInput = document.getElementById('entry-date');
+    if (dateInput) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        dateInput.value = `${yyyy}-${mm}-${dd}`;
+    }
     
     // Auto-fill previous values from LocalStorage
     const lastMc = localStorage.getItem('last_machine_id');
@@ -366,6 +464,23 @@ async function handleProductionSubmit(e) {
 
     const noteValue = formData.get('note') || '';
 
+    const entryDateStr = formData.get('entryDate');
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    
+    let recordTimestamp;
+    if (entryDateStr === todayStr) {
+        recordTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+    } else {
+        // Backdated entry at 12:00 PM
+        const [y, m, d] = entryDateStr.split('-');
+        const customDate = new Date(y, m - 1, d, 12, 0, 0);
+        recordTimestamp = firebase.firestore.Timestamp.fromDate(customDate);
+    }
+
     const record = {
         machineId: machineId,
         quality: formData.get('quality'),
@@ -378,14 +493,12 @@ async function handleProductionSubmit(e) {
         let savedId = docId;
         
         if (docId) {
-            // Updating an existing record (do not increment Taka)
+            record.timestamp = recordTimestamp;
             await db.collection('Production').doc(docId).update(record);
             showToast('Record updated', 'success');
             
-            // Re-inject the existing taka for local array
             record.taka = parseInt(document.getElementById('taka').value);
         } else {
-            // Adding a new record -> use Transaction to safely get and increment Taka & RecNo
             const configRefTaka = db.collection('Config').doc('TakaTracker');
             const configRefRecNo = db.collection('Config').doc('RecNoTracker');
             
@@ -409,7 +522,7 @@ async function handleProductionSubmit(e) {
                     ...record, 
                     recordId: currentRecNo,
                     taka: currentTaka, 
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                    timestamp: recordTimestamp 
                 };
                 
                 transaction.set(newRecordRef, recordToSave);
@@ -417,29 +530,20 @@ async function handleProductionSubmit(e) {
                 transaction.set(configRefRecNo, { nextRecNo: currentRecNo + 1 }, { merge: true });
                 
                 savedId = newRecordRef.id;
-                record.taka = currentTaka; // Add to local object for UI
+                record.taka = currentTaka;
                 record.recordId = currentRecNo;
             });
             showToast('Record added', 'success');
         }
         
-        // Save Note to suggestions
         saveNoteSuggestion(noteValue);
-        
-        // Save to LocalStorage for Auto-fill
         localStorage.setItem('last_machine_id', machineId);
         localStorage.setItem('last_quality', record.quality);
-        
-        // Update local state tracker
         updateBimTracker(machineId, bimStatus);
 
-        // Update Recent Saves Preview
-        recentSaves.unshift({ id: savedId, ...record });
-        renderRecentSaves();
-
-        // Google Sheets Sync
+        fetchRecentRecords(true);
+        loadDashboardAnalytics(true);
         syncToGoogleSheets(record);
-
         resetForm();
     } catch (error) {
         console.error("Save error:", error);
@@ -450,115 +554,68 @@ async function handleProductionSubmit(e) {
     }
 }
 
-function renderRecentSaves() {
-    if (recentSaves.length === 0) {
-        recentSavesContainer.style.display = 'none';
+async function fetchRecentRecords(reset = false) {
+    if (!db) return;
+    if (reset) {
+        currentPage = 0;
+        recentRecordsCursor = [];
+    }
+
+    try {
+        let query = db.collection('Production').orderBy('timestamp', 'desc').limit(PAGE_SIZE);
+        
+        if (currentPage > 0 && recentRecordsCursor[currentPage - 1]) {
+            query = query.startAfter(recentRecordsCursor[currentPage - 1]);
+        }
+
+        const snapshot = await query.get();
+        const records = [];
+        snapshot.forEach(doc => records.push({ id: doc.id, ...doc.data() }));
+        
+        if (!snapshot.empty) {
+            recentRecordsCursor[currentPage] = snapshot.docs[snapshot.docs.length - 1];
+        }
+
+        renderRecentRecords(records);
+        
+        document.getElementById('btn-recent-prev').disabled = (currentPage === 0);
+        document.getElementById('btn-recent-next').disabled = snapshot.docs.length < PAGE_SIZE;
+    } catch (err) {
+        console.error('Error fetching recent records:', err);
+    }
+}
+
+function renderRecentRecords(records) {
+    if (records.length === 0) {
+        recentSavesList.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No records found</td></tr>';
         return;
     }
     
-    recentSavesContainer.style.display = 'block';
     let html = '';
-    const qOptions = document.getElementById('quality').innerHTML; // Reuse quality options
-    
-    recentSaves.forEach(rec => {
-        if (editingRecentId === rec.id) {
-            // Edit Mode
-            let mcOptions = '';
-            for (let i = 1; i <= 52; i++) {
-                mcOptions += `<option value="${i}" ${rec.machineId == i ? 'selected' : ''}>${i}</option>`;
-            }
-            
-            let qSelectHtml = qOptions;
-            if (rec.quality) {
-                qSelectHtml = qSelectHtml.replace(`value="${rec.quality}"`, `value="${rec.quality}" selected`);
-            }
-
-            html += `
-                <tr>
-                    <td><select id="edit-mc-${rec.id}" style="padding:4px; border-radius:4px; border:1px solid #ccc; width:60px">${mcOptions}</select></td>
-                    <td><select id="edit-q-${rec.id}" style="padding:4px; border-radius:4px; border:1px solid #ccc;">${qSelectHtml}</select></td>
-                    <td><input type="number" id="edit-m-${rec.id}" value="${rec.meter}" style="padding:4px; border-radius:4px; border:1px solid #ccc; width:80px"></td>
-                    <td style="white-space: nowrap;">
-                        <button onclick="window.saveRecentRecord('${rec.id}')" class="btn-primary btn-sm" style="margin-right:5px; padding:0.2rem 0.5rem; background-color: var(--status-normal);">Save</button>
-                        <button onclick="window.cancelEditRecent()" class="btn-secondary btn-sm" style="padding:0.2rem 0.5rem;">Cancel</button>
-                    </td>
-                </tr>
-            `;
-        } else {
-            // Normal View Mode
-            html += `
-                <tr>
-                    <td data-label="M/C"><strong>${rec.machineId}</strong></td>
-                    <td data-label="Quality">${rec.quality || '-'}</td>
-                    <td data-label="Meter">${rec.meter}</td>
-                    <td data-label="Actions" style="white-space: nowrap;">
-                        <button onclick="window.editRecentRecord('${rec.id}')" class="btn-secondary btn-sm" title="Edit" style="margin-right:5px; padding:0.2rem 0.5rem; background-color: var(--primary-color); color: white;">Edit</button>
-                        <button onclick="window.deleteRecentRecord('${rec.id}')" class="btn-danger btn-sm" title="Delete" style="padding:0.2rem 0.5rem;">Delete</button>
-                    </td>
-                </tr>
-            `;
+    records.forEach(rec => {
+        let dateStr = 'Pending';
+        if (rec.timestamp) {
+            const d = new Date(rec.timestamp.toDate());
+            dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
         }
+        
+        html += `
+            <tr>
+                <td data-label="Rec No"><strong>${rec.recordId || rec.id.slice(0,5)}</strong></td>
+                <td data-label="Date">${dateStr}</td>
+                <td data-label="Quality">${rec.quality || '-'}</td>
+                <td data-label="Meter">${rec.meter}</td>
+                <td data-label="BIM">${rec.bimStatus || '-'}</td>
+                <td data-label="Actions" style="white-space: nowrap; text-align: center;">
+                    <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary btn-sm" title="Edit">✏️</button>
+                    <button onclick="window.deleteFromView('${rec.id}')" class="icon-btn text-danger btn-sm" title="Delete">🗑️</button>
+                </td>
+            </tr>
+        `;
     });
     
     recentSavesList.innerHTML = html;
 }
-
-window.editRecentRecord = function(id) {
-    editingRecentId = id;
-    renderRecentSaves();
-};
-
-window.cancelEditRecent = function() {
-    editingRecentId = null;
-    renderRecentSaves();
-};
-
-window.saveRecentRecord = async function(id) {
-    if (!db) return;
-    const newMc = document.getElementById(`edit-mc-${id}`).value;
-    const newQ = document.getElementById(`edit-q-${id}`).value;
-    const newM = parseFloat(document.getElementById(`edit-m-${id}`).value);
-    
-    if(!newMc || !newQ || isNaN(newM)) {
-        showToast('Please fill all fields', 'error');
-        return;
-    }
-
-    try {
-        await db.collection('Production').doc(id).update({
-            machineId: newMc,
-            quality: newQ,
-            meter: newM
-        });
-        showToast('Record updated', 'success');
-        
-        const recIndex = recentSaves.findIndex(r => r.id === id);
-        if(recIndex > -1) {
-            recentSaves[recIndex].machineId = newMc;
-            recentSaves[recIndex].quality = newQ;
-            recentSaves[recIndex].meter = newM;
-        }
-        editingRecentId = null;
-        renderRecentSaves();
-    } catch (error) {
-        console.error("Update error:", error);
-        showToast('Failed to update', 'error');
-    }
-};
-
-window.deleteRecentRecord = async function(id) {
-    if (!db || !confirm("Are you sure you want to delete this record?")) return;
-    try {
-        await db.collection('Production').doc(id).delete();
-        showToast('Record deleted', 'success');
-        
-        recentSaves = recentSaves.filter(rec => rec.id !== id);
-        renderRecentSaves();
-    } catch (error) {
-        console.error("Delete error:", error);
-        showToast('Failed to delete', 'error');
-    }
-};
 
 async function handleQualitySubmit(e) {
     e.preventDefault();
@@ -855,11 +912,18 @@ window.editFromView = async function(id) {
     try {
         const doc = await db.collection('Production').doc(id).get();
         if(doc.exists) {
-            document.querySelector('.tab-btn[data-target="dashboard-view"]').click();
+            document.querySelector('.tab-btn[data-target="entry-view"]').click();
             const rec = {id: doc.id, ...doc.data()};
             
             document.getElementById('internal-doc-id').value = rec.id;
             document.getElementById('record-id').value = rec.recordId || rec.id;
+            if (rec.timestamp) {
+                const d = new Date(rec.timestamp.toDate());
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                document.getElementById('entry-date').value = `${yyyy}-${mm}-${dd}`;
+            }
             document.getElementById('machine-id').value = rec.machineId;
             document.getElementById('quality').value = rec.quality || '';
             document.getElementById('meter').value = rec.meter;
@@ -881,9 +945,8 @@ window.deleteFromView = async function(id) {
         await db.collection('Production').doc(id).delete();
         showToast('Record deleted', 'success');
         loadAllRecordsView(); // Refresh the list
-        // Also remove from recentSaves if present
-        recentSaves = recentSaves.filter(rec => rec.id !== id);
-        renderRecentSaves();
+        fetchRecentRecords(); // Refresh recent list too
+        loadDashboardAnalytics(true);
     } catch (e) {
         console.error(e);
         showToast('Error deleting record', 'error');
@@ -965,11 +1028,18 @@ async function handleSearchById() {
         }
 
         if (doc && doc.exists) {
-            document.querySelector('.tab-btn[data-target="dashboard-view"]').click();
+            document.querySelector('.tab-btn[data-target="entry-view"]').click();
             const rec = {id: doc.id, ...doc.data()};
             
             document.getElementById('internal-doc-id').value = rec.id;
             document.getElementById('record-id').value = rec.recordId || rec.id;
+            if (rec.timestamp) {
+                const d = new Date(rec.timestamp.toDate());
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                document.getElementById('entry-date').value = `${yyyy}-${mm}-${dd}`;
+            }
             document.getElementById('machine-id').value = rec.machineId;
             document.getElementById('quality').value = rec.quality || '';
             document.getElementById('meter').value = rec.meter;
@@ -1019,3 +1089,78 @@ if ('serviceWorker' in navigator) {
 resetForm();
 initUI();
 initFirebase();
+
+// --- Quality Breakdown Date Logic ---
+let currentQualityDate = new Date();
+currentQualityDate.setHours(0,0,0,0);
+let unsubscribeQualityBreakdown = null;
+
+function loadQualityBreakdown(dateObj) {
+    if (!db) return;
+    const start = new Date(dateObj);
+    const end = new Date(dateObj);
+    end.setHours(23, 59, 59, 999);
+
+    if (unsubscribeQualityBreakdown) {
+        unsubscribeQualityBreakdown();
+    }
+
+    const list = document.getElementById('quality-breakdown-list');
+    list.innerHTML = '<tr><td class="text-muted text-center" colspan="2"><span class="loading-skeleton w-50"></span></td></tr>';
+
+    unsubscribeQualityBreakdown = db.collection('Production')
+        .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(start))
+        .where('timestamp', '<=', firebase.firestore.Timestamp.fromDate(end))
+        .onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                list.innerHTML = '<tr><td class="text-muted text-center" colspan="2">No production data available</td></tr>';
+                return;
+            }
+
+            const qualityTotals = {};
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const q = data.quality || 'Unknown';
+                const m = data.meter || 0;
+                if (!qualityTotals[q]) qualityTotals[q] = 0;
+                qualityTotals[q] += m;
+            });
+
+            let breakdownHtml = '';
+            for (const [q, total] of Object.entries(qualityTotals)) {
+                breakdownHtml += `<tr>
+                    <td data-label="Quality Name" style="padding: 6px 0;"><strong>${q}</strong></td>
+                    <td data-label="Total Meter Production" style="text-align: right; font-weight: bold; padding: 6px 0;">${total.toFixed(1)}m</td>
+                </tr>`;
+            }
+            list.innerHTML = breakdownHtml;
+        }, err => {
+            console.error('Quality breakdown error:', err);
+            list.innerHTML = '<tr><td class="text-danger text-center" colspan="2">Error loading data</td></tr>';
+        });
+}
+
+function updateQualityDateDisplay() {
+    const display = document.getElementById('qual-date-display');
+    const today = new Date(); today.setHours(0,0,0,0);
+    
+    if (currentQualityDate.getTime() === today.getTime()) {
+        display.textContent = 'Today';
+        document.getElementById('btn-qual-next').disabled = true;
+    } else {
+        display.textContent = currentQualityDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        document.getElementById('btn-qual-next').disabled = false;
+    }
+}
+
+document.getElementById('btn-qual-prev').addEventListener('click', () => {
+    currentQualityDate.setDate(currentQualityDate.getDate() - 1);
+    updateQualityDateDisplay();
+    loadQualityBreakdown(currentQualityDate);
+});
+
+document.getElementById('btn-qual-next').addEventListener('click', () => {
+    currentQualityDate.setDate(currentQualityDate.getDate() + 1);
+    updateQualityDateDisplay();
+    loadQualityBreakdown(currentQualityDate);
+});

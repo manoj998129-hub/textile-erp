@@ -36,6 +36,7 @@
         </div>
         <nav class="tabs-container">
             <button class="tab-btn active" data-target="dashboard-view">Dashboard</button>
+            <button class="tab-btn" data-target="entry-view">Entry</button>
             <button class="tab-btn" data-target="view-records-view">View</button>
             <button class="tab-btn" data-target="reports-view">Reports</button>
             <button class="tab-btn" data-target="quality-view">Quality</button>
@@ -72,39 +73,8 @@
         <!-- Alerts/Notifications -->
         <div id="notification-area"></div>
 
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="view-section active">
-            <!-- Modern Dashboard Widgets -->
-            <div class="dashboard-widgets">
-                <div class="widget-card glass-effect">
-                    <div class="widget-title">Today's Production</div>
-                    <div class="widget-value text-primary" id="daily-quality-summary">Loading...</div>
-                </div>
-                <div class="widget-card glass-effect">
-                    <div class="widget-title">Machine Count</div>
-                    <div class="widget-value" id="widget-machine-count">52</div>
-                </div>
-                <div class="widget-card glass-effect">
-                    <div class="widget-title">Running BIM</div>
-                    <div class="widget-value status-normal-text" id="widget-running-bim">-</div>
-                </div>
-                <div class="widget-card glass-effect">
-                    <div class="widget-title">Stopped BIM</div>
-                    <div class="widget-value status-action-text" id="widget-stopped-bim">-</div>
-                </div>
-            </div>
-            
-            <div id="quality-breakdown-container" class="glass-effect p-3 mb-4 breakdown-card">
-                <h3 class="breakdown-title">Quality Breakdown</h3>
-                <div class="table-responsive mobile-cards-container">
-                    <table class="data-table mobile-cards">
-                        <tbody id="quality-breakdown-list">
-                            <tr><td class="text-muted" data-label="Status">No data yet.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+        <!-- Entry View -->
+        <div id="entry-view" class="view-section">
             <!-- Section 1: Production Entry -->
             <section class="card glass-effect mb-4" id="production-entry-section">
                 <div class="card-header">
@@ -114,9 +84,13 @@
                     <form id="production-form" class="dynamic-form">
                         <input type="hidden" id="internal-doc-id" name="internalDocId">
                         <div class="form-row">
-                            <div class="form-group flex-shrink-0">
+                            <div class="form-group flex-shrink-0 w-compact">
                                 <label for="record-id">Rec No</label>
                                 <input type="text" id="record-id" name="recordId" readonly placeholder="Auto" class="input-readonly text-center font-bold">
+                            </div>
+                            <div class="form-group flex-grow-1">
+                                <label for="entry-date">Date</label>
+                                <input type="date" id="entry-date" name="entryDate" required class="form-input-lg">
                             </div>
                             <div class="form-group flex-grow-1">
                                 <label for="machine-id">M/C Number</label>
@@ -166,26 +140,82 @@
                     </form>
 
                     <!-- Recent Saves Preview -->
-                    <div id="recent-saves-container" class="hidden mt-4 pt-3 border-t">
-                        <h3 class="section-subtitle mb-2">Last Saved Records</h3>
+                    <div id="recent-saves-container" class="mt-4 pt-3 border-t">
+                        <div class="flex-between align-center mb-2">
+                            <h3 class="section-subtitle">Recent Records</h3>
+                            <div class="pagination-controls flex-gap-2">
+                                <button type="button" id="btn-recent-prev" class="btn-secondary btn-sm" disabled>Previous</button>
+                                <button type="button" id="btn-recent-next" class="btn-secondary btn-sm" disabled>Next</button>
+                            </div>
+                        </div>
                         <div class="table-responsive mobile-cards-container">
                             <table class="data-table mobile-cards compact-table">
                                 <thead>
                                     <tr>
-                                        <th>M/C</th>
+                                        <th>Rec No</th>
+                                        <th>Date</th>
                                         <th>Quality</th>
                                         <th>Meter</th>
+                                        <th>BIM Status</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="recent-saves-list">
-                                    <!-- Injected by JS -->
+                                    <tr><td colspan="6" class="text-center text-muted py-3">Loading records...</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </section>
+        </div> <!-- End Entry View -->
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view-section active">
+            <!-- Modern Dashboard Widgets -->
+            <div class="dashboard-widgets analytics-grid">
+                <div class="widget-card glass-effect orange-accent">
+                    <div class="widget-title">Today's Total Production</div>
+                    <div class="widget-value text-orange" id="daily-quality-summary"><span class="loading-skeleton w-50"></span></div>
+                </div>
+                <div class="widget-card glass-effect">
+                    <div class="widget-title">Previous Day Production</div>
+                    <div class="widget-value flex-align-center" id="dashboard-prev-day" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span class="loading-skeleton w-50"></span>
+                    </div>
+                </div>
+                <div class="widget-card glass-effect">
+                    <div class="widget-title">Current Month Production</div>
+                    <div class="widget-value" id="dashboard-current-month"><span class="loading-skeleton w-50"></span></div>
+                </div>
+                <div class="widget-card glass-effect">
+                    <div class="widget-title">Last Month Production</div>
+                    <div class="widget-value" id="dashboard-last-month"><span class="loading-skeleton w-50"></span></div>
+                </div>
+            </div>
+            
+            <div class="dashboard-meta flex-between align-center mb-3">
+                <div class="text-sm text-muted" id="last-sync-time">Last updated: --:--</div>
+                <button class="btn-secondary btn-sm" onclick="window.loadDashboardAnalytics(true)" style="padding: 0.2rem 0.6rem;">Refresh Now</button>
+            </div>
+            
+            <div id="quality-breakdown-container" class="glass-effect p-3 mb-4 breakdown-card">
+                <div class="flex-between align-center mb-3">
+                    <h3 class="breakdown-title mb-0">Quality Breakdown</h3>
+                    <div class="date-navigator flex-gap-2 align-center">
+                        <button class="icon-btn btn-sm" id="btn-qual-prev">◀</button>
+                        <span id="qual-date-display" class="font-bold">Today</span>
+                        <button class="icon-btn btn-sm" id="btn-qual-next" disabled>▶</button>
+                    </div>
+                </div>
+                <div class="table-responsive mobile-cards-container">
+                    <table class="data-table mobile-cards">
+                        <tbody id="quality-breakdown-list">
+                            <tr><td class="text-muted text-center" colspan="2"><span class="loading-skeleton w-50"></span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div> <!-- End Dashboard View -->
 
         <!-- View Records View -->
