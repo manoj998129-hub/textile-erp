@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Textile Factory Management</title>
+    
+    <!-- PWA Requirements -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e5e7eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Textile PWA">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <!-- SheetJS for Excel Backup -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-left">
+            <h1>Factory Manager</h1>
+            <span id="connection-status" class="status-badge online">Online</span>
+        </div>
+        <div class="header-right">
+            <!-- Settings moved to tabs -->
+        </div>
+    </header>
+
+    <main class="app-container">
+        
+        <!-- Login Modal (Hidden by default, shown via JS if not authenticated) -->
+        <div id="login-modal" class="modal show" style="background: var(--bg-color); backdrop-filter: none;">
+            <div class="modal-content" style="max-width: 400px; margin: auto;">
+                <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                    <h2 style="color: var(--primary-color); font-size: 1.5rem;">Factory Manager</h2>
+                </div>
+                <div class="modal-body">
+                    <p class="text-center text-muted mb-3">Please log in to continue</p>
+                    <form id="login-form" class="dynamic-form">
+                        <div class="form-group mb-3">
+                            <label for="login-user">Username</label>
+                            <input type="text" id="login-user" required placeholder="admin" class="form-input-lg">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="login-pass">Password</label>
+                            <input type="password" id="login-pass" required placeholder="admin" class="form-input-lg">
+                        </div>
+                        <div id="login-error" class="text-danger mb-3 text-center" style="display: none; font-size: 0.9rem;">Invalid credentials</div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts/Notifications -->
+        <div id="notification-area"></div>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" data-target="dashboard-view">Dashboard</button>
+            <button class="tab-btn" data-target="view-records-view">View</button>
+            <button class="tab-btn" data-target="reports-view">Reports</button>
+            <button class="tab-btn" data-target="quality-view">Quality Master</button>
+            <button class="tab-btn" data-target="settings-view">Settings</button>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view-section active">
+            <!-- Daily Summary Widget -->
+            <div id="daily-summary-widget" class="glass-effect p-3 mb-3" style="border-radius: 8px;">
+                <div style="font-size: 0.95rem; margin-bottom: 8px;"><strong>Today's Production:</strong> <span id="daily-quality-summary" class="text-primary" style="font-size: 1.2rem;">Loading...</span></div>
+                <div id="quality-breakdown-container" style="background: rgba(0,0,0,0.03); border-radius: 6px; padding: 10px; font-size: 0.9rem;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tbody id="quality-breakdown-list">
+                            <tr><td class="text-muted">No data yet.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 1: Production Entry -->
+            <section class="card glass-effect mb-4" id="production-entry-section">
+            <div class="card-header">
+                <h2>Production Entry</h2>
+            </div>
+            <div class="card-body">
+                <form id="production-form" class="dynamic-form">
+                    <input type="hidden" id="internal-doc-id" name="internalDocId">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 0 1 120px;">
+                            <label for="record-id">Rec No</label>
+                            <input type="text" id="record-id" name="recordId" readonly placeholder="Auto" style="background: rgba(0,0,0,0.05); cursor: not-allowed; font-weight: bold; text-align: center;">
+                        </div>
+                        <div class="form-group">
+                            <label for="machine-id">M/C Number</label>
+                            <select id="machine-id" name="machineId" required class="form-input-lg">
+                                <option value="" disabled selected>Select M/C</option>
+                                <!-- JS injects 1-52 -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quality">Quality</label>
+                            <select id="quality" name="quality" required class="form-input-lg">
+                                <option value="" disabled selected>Select Quality</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="meter">Meter</label>
+                            <input type="number" id="meter" name="meter" step="0.1" required placeholder="e.g., 50.5" class="form-input-lg">
+                        </div>
+                        <div class="form-group">
+                            <label for="taka">Taka Number (Auto)</label>
+                            <input type="number" id="taka" name="taka" placeholder="Loading..." required class="form-input-lg" readonly style="background-color: #e5e7eb; cursor: not-allowed;">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bim-status">BIM Status</label>
+                            <select id="bim-status" name="bimStatus" class="form-select">
+                                <option value="BIM Running">BIM Running</option>
+                                <option value="BIM Finish">BIM Finish</option>
+                                <option value="BIM Start">BIM Start</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="note">Note</label>
+                            <input type="text" id="note" name="note" list="note-suggestions" placeholder="Add a note..." class="form-input-lg">
+                            <datalist id="note-suggestions">
+                                <!-- JS injects notes -->
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="form-actions" style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button type="submit" id="btn-save" class="btn-primary" style="flex: 1;">Save & Sync</button>
+                        <button type="button" id="btn-new" class="btn-secondary" style="display: none;">+ New</button>
+                    </div>
+                </form>
+
+                <!-- Recent Saves Preview -->
+                <div id="recent-saves-container" style="display: none; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                    <h3 style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-secondary);">Last Saved Records</h3>
+                    <div class="table-responsive">
+                        <table class="data-table" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th>M/C</th>
+                                    <th>Quality</th>
+                                    <th>Meter</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-saves-list">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div> <!-- End Dashboard View -->
+
+        <!-- View Records View -->
+        <div id="view-records-view" class="view-section">
+            <section class="card glass-effect">
+                <div class="card-header">
+                    <h2>Recent Records</h2>
+                    <span class="text-muted" style="font-size: 0.85rem;">Showing latest 200 records</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                        <table class="data-table compact-table">
+                            <thead>
+                                <tr>
+                                    <th>Rec No</th>
+                                    <th>Date</th>
+                                    <th>M/C</th>
+                                    <th>Quality</th>
+                                    <th>Meter</th>
+                                    <th>Note</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-records-list">
+                                <tr><td colspan="7" class="text-center text-muted py-3">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div> <!-- End View Records View -->
+
+        <!-- Reports View -->
+        <div id="reports-view" class="view-section">
+            <section class="card glass-effect mb-4">
+                <div class="card-header">
+                    <h2>Filter Reports</h2>
+                </div>
+                <div class="card-body">
+                    <form id="report-form" class="dynamic-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="report-from-date">From Date</label>
+                                <input type="date" id="report-from-date" name="fromDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="report-to-date">To Date</label>
+                                <input type="date" id="report-to-date" name="toDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="report-mc">M/C Number (Optional)</label>
+                                <input type="number" id="report-mc" name="mcNumber" min="1" max="50" placeholder="All">
+                            </div>
+                            <div class="form-group">
+                                <label for="report-quality">Quality</label>
+                                <select id="report-quality" name="quality" class="form-select">
+                                    <option value="">All</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="report-bim">BIM Status</label>
+                                <select id="report-bim" name="bimStatus" class="form-select">
+                                    <option value="">All</option>
+                                    <option value="BIM Running">BIM Running</option>
+                                    <option value="BIM Finish">BIM Finish</option>
+                                    <option value="BIM Start">BIM Start</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-actions" style="display: flex; gap: 10px; margin-top: 10px; align-items: flex-end;">
+                            <button type="submit" class="btn-primary" style="flex: 2;">Generate Report</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Report Summary -->
+            <div id="report-summary" class="summary-cards" style="display: none;">
+                <div class="summary-card glass-effect">
+                    <div class="summary-title">Today Production</div>
+                    <div class="summary-value text-primary" id="summary-today-meters">0</div>
+                </div>
+                <div class="summary-card glass-effect">
+                    <div class="summary-title">Previous Day Production</div>
+                    <div class="summary-value" id="summary-prev-meters">0</div>
+                </div>
+                <div class="summary-card glass-effect">
+                    <div class="summary-title">Filtered Total Meters</div>
+                    <div class="summary-value text-primary" id="summary-total-meters">0</div>
+                </div>
+            </div>
+
+            <!-- Report Results -->
+            <section class="card glass-effect" id="report-results-section">
+                <!-- PRINT HEADER -->
+                <div id="print-header" class="print-only" style="display: none;">
+                    <h1 style="text-align: center; margin: 0; font-size: 1.5rem; text-transform: uppercase;">AAROHI PRODUCTION REPORT</h1>
+                    <h3 style="text-align: center; margin: 0 0 15px 0; font-size: 1.1rem; color: #555;">Waterjet Loom Production Management System</h3>
+                    
+                    <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                        <div id="print-filters" style="font-size: 0.9rem;">
+                            <!-- Injected by JS -->
+                        </div>
+                        <div id="print-summary-stats" style="font-size: 0.9rem; text-align: right;">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Report Results</h2>
+                    <button id="btn-global-print" class="btn-secondary btn-sm" onclick="window.print()">🖨️ Print Report</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Date</th>
+                                    <th>M/C</th>
+                                    <th>Quality</th>
+                                    <th>Meter</th>
+                                    <th>Taka</th>
+                                    <th>Note</th>
+                                    <th>BIM</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-list">
+                                <tr><td colspan="8" class="text-center text-muted py-3">Select filters and generate report (or generate to view all)</td></tr>
+                            </tbody>
+                            <tfoot id="report-tfoot" style="display: none;">
+                                <tr style="font-weight: bold; background: #f1f5f9;">
+                                    <td colspan="4" style="text-align: right; padding-right: 15px;">TOTAL</td>
+                                    <td id="table-total-meters">0</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- PRINT FOOTER -->
+                <div id="print-footer" class="print-only" style="display: none;">
+                    Generated by Aarohi Production System
+                </div>
+            </section>
+        </div> <!-- End Reports View -->
+
+        <!-- Quality Master View -->
+        <div id="quality-view" class="view-section">
+            <section class="card glass-effect mb-4">
+                <div class="card-header">
+                    <h2>Add New Quality</h2>
+                </div>
+                <div class="card-body">
+                    <form id="quality-form" class="dynamic-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="new-quality-name">Quality Name</label>
+                                <input type="text" id="new-quality-name" name="qualityName" required placeholder="Enter Quality Name" class="form-input-lg">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Add Quality</button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card glass-effect">
+                <div class="card-header">
+                    <h2>Quality List</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Quality Name</th>
+                                    <th style="width: 80px; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quality-list-table">
+                                <tr><td colspan="2" class="text-center text-muted py-3">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div> <!-- End Quality Master View -->
+
+        <!-- Settings View -->
+        <div id="settings-view" class="view-section">
+            
+            <!-- Taka Settings -->
+            <section class="card glass-effect mb-4">
+                <div class="card-header">
+                    <h2>Taka Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <form id="taka-config-form" class="dynamic-form">
+                        <div class="form-group mb-3">
+                            <label for="starting-taka">Set Starting Taka Number</label>
+                            <input type="number" id="starting-taka" min="1" required placeholder="e.g., 1000" class="form-input-lg">
+                            <small class="text-muted" style="display:block; margin-top:5px;">This will only affect future entries. Do not set below current max Taka to avoid duplicates.</small>
+                        </div>
+                        <button type="submit" class="btn-primary">Save Taka Settings</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Data Management (Wipe & Backup) -->
+            <section class="card glass-effect mb-4">
+                <div class="card-header">
+                    <h2>Data Management</h2>
+                </div>
+                <div class="card-body">
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <button id="btn-backup" class="btn-primary" style="width: 100%;">📊 Backup Data to Excel</button>
+                            <small class="text-muted" style="display:block; margin-top:5px;">Download all production data and option to email/share.</small>
+                        </div>
+                        
+                        <hr style="border:0; border-top:1px solid #e5e7eb; margin: 10px 0;">
+                        
+                        <div>
+                            <input type="password" id="wipe-password" placeholder="Enter admin password to delete" class="form-input-lg mb-2" style="width: 100%; border: 1px solid #ef4444;">
+                            <button id="btn-wipe" class="btn-danger" style="width: 100%;">🗑️ Delete All Data</button>
+                            <small class="text-muted" style="display:block; margin-top:5px; color: var(--status-action);">Warning: This action cannot be undone.</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Authentication Settings -->
+            <section class="card glass-effect mb-4">
+                <div class="card-header">
+                    <h2>Authentication Settings</h2>
+                </div>
+                <div class="card-body">
+                    <form id="auth-config-form" class="dynamic-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="auth-new-user">New Username</label>
+                                <input type="text" id="auth-new-user" required class="form-input-lg">
+                            </div>
+                            <div class="form-group">
+                                <label for="auth-new-pass">New Password</label>
+                                <input type="password" id="auth-new-pass" required class="form-input-lg">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary mt-2">Update Credentials</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Firebase Config -->
+            <section class="card glass-effect">
+                <div class="card-header">
+                    <h2>Firebase Config</h2>
+                </div>
+                <div class="card-body">
+                    <form id="config-form" class="dynamic-form">
+                        <div class="form-group mb-3">
+                            <label for="apiKey">API Key</label>
+                            <input type="text" id="apiKey" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="authDomain">Auth Domain</label>
+                            <input type="text" id="authDomain" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="projectId">Project ID</label>
+                            <input type="text" id="projectId" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="gasUrl">Google Apps Script URL (Optional)</label>
+                            <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/...">
+                        </div>
+                        <button type="submit" class="btn-primary">Save Connection</button>
+                    </form>
+                </div>
+            </section>
+        </div> <!-- End Settings View -->
+
+    </main>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+</html>
