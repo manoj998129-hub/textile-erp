@@ -77,8 +77,12 @@
         <div id="entry-view" class="view-section">
             <!-- Section 1: Production Entry -->
             <section class="card glass-effect mb-4" id="production-entry-section">
-                <div class="card-header">
-                    <h2>Production Entry</h2>
+                <div class="card-header flex-between align-center">
+                    <h2 class="mb-0">Production Entry</h2>
+                    <div id="edit-badge" class="badge-edit hidden flex-align-center" style="gap: 0.5rem;">
+                        <span class="status-badge" style="background: var(--warning-color); color: #000; padding: 0.2rem 0.5rem;">Editing</span>
+                        <button type="button" class="btn-secondary btn-sm" onclick="window.cancelEdit()" style="padding: 0.1rem 0.4rem; font-size: 0.8rem;">Cancel</button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form id="production-form" class="dynamic-form">
@@ -148,8 +152,10 @@
                                 <button type="button" id="btn-recent-next" class="btn-secondary btn-sm" disabled>Next</button>
                             </div>
                         </div>
-                        <div class="table-responsive mobile-cards-container">
-                            <table class="data-table mobile-cards compact-table">
+                        
+                        <!-- Desktop Table View -->
+                        <div class="table-responsive desktop-only">
+                            <table class="data-table compact-table">
                                 <thead>
                                     <tr>
                                         <th>Rec No</th>
@@ -160,14 +166,24 @@
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="recent-saves-list">
+                                <tbody id="recent-saves-list-desktop">
                                     <tr><td colspan="6" class="text-center text-muted py-3">Loading records...</td></tr>
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Mobile Cards View -->
+                        <div id="recent-saves-list-mobile" class="mobile-only">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </section>
+            
+            <!-- Floating Quick Action -->
+            <button class="fab-btn mobile-only" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Scroll to Top">
+                ↑
+            </button>
         </div> <!-- End Entry View -->
 
         <!-- Dashboard View -->

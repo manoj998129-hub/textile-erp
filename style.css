@@ -529,20 +529,52 @@ select.form-input-lg {
     }
 
     .form-row, .three-cols {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 0.5rem;
+        display: contents; /* Flattens children for CSS Grid */
     }
     
+    .dynamic-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        row-gap: 12px;
+    }
+
     .form-group {
-        margin-bottom: 0.5rem !important;
-        flex: 1 1 45%;
+        margin-bottom: 0 !important;
+    }
+
+    /* Grid Mapping */
+    .form-group:has(#record-id) { grid-column: 1; }
+    .form-group:has(#entry-date) { grid-column: 2; }
+    .form-group:has(#machine-id) { grid-column: 1 / -1; }
+    .form-group:has(#quality) { grid-column: 1; }
+    .form-group:has(#meter) { grid-column: 2; }
+    .form-group:has(#taka) { grid-column: 1; }
+    .form-group:has(#bim-status) { grid-column: 2; }
+    .form-group:has(#note) { grid-column: 1 / -1; }
+
+    /* Row 6: Actions (full width, sticky) */
+    .form-actions {
+        grid-column: 1 / -1;
+        position: sticky;
+        bottom: 10px;
+        z-index: 100;
+        background: var(--card-bg);
+        padding: 8px;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-top: 4px !important;
     }
 
     .form-input-lg, .form-select {
+        height: 42px;
+        font-size: 15px;
         padding: 0.4rem 0.5rem;
-        height: 38px;
-        font-size: 0.9rem;
+    }
+    
+    .form-group label {
+        font-size: 13px;
+        margin-bottom: 2px;
     }
 
     .dashboard-widgets {
@@ -551,44 +583,64 @@ select.form-input-lg {
     
     .desktop-only { display: none !important; }
 
-    /* Dense Grid Layout for Tables on Mobile */
-    .mobile-cards-container {
-        background: transparent;
-        padding: 0;
-        overflow-x: auto;
+    /* Compact Mobile Cards for Recent Records */
+    .mobile-record-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 10px;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
-
-    .data-table {
-        font-size: 11px;
+    
+    .mrc-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
     }
-
-    .data-table th, .data-table td {
-        padding: 4px 2px;
-    }
-
-    .data-table th {
-        position: sticky;
-        top: 0;
-        background: var(--surface-color);
-        z-index: 10;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    /* Light Green Theme for Recent Saves */
-    #recent-saves-list tr {
-        background-color: #f0fdf4 !important;
-        border-bottom: 1px solid #dcfce7;
-    }
-
-    /* Button sizing inside dense tables */
-    .data-table .btn-sm, .data-table .icon-btn {
-        padding: 0.2rem;
-        font-size: 0.8rem;
-    }
+    
+    .mrc-top { font-weight: bold; font-size: 15px; }
+    .mrc-sub { font-size: 13px; color: var(--text-secondary); }
 }
 
 @media (min-width: 769px) {
     .mobile-only { display: none !important; }
+}
+
+/* GLOBAL CHIP STYLES */
+.status-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.chip-running { background: rgba(249, 115, 22, 0.1); color: #c2410c; } /* Orange */
+.chip-start { background: rgba(59, 130, 246, 0.1); color: #1d4ed8; } /* Blue */
+.chip-finish { background: rgba(16, 185, 129, 0.1); color: #047857; } /* Green */
+
+.fab-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 90;
+    cursor: pointer;
 }
 
 /* MODAL */

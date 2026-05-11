@@ -544,13 +544,17 @@ async function handleProductionSubmit(e) {
         fetchRecentRecords(true);
         loadDashboardAnalytics(true);
         syncToGoogleSheets(record);
-        resetForm();
+        cancelEdit(true); // true = focus quality
     } catch (error) {
         console.error("Save error:", error);
         showToast('Failed to save record', 'error');
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Save & Sync';
+        if (!document.getElementById('internal-doc-id').value) {
+            submitBtn.textContent = 'Save & Sync';
+        } else {
+            submitBtn.textContent = 'Update & Sync';
+        }
     }
 }
 
@@ -586,12 +590,20 @@ async function fetchRecentRecords(reset = false) {
 }
 
 function renderRecentRecords(records) {
+    const desktopList = document.getElementById('recent-saves-list-desktop');
+    const mobileList = document.getElementById('recent-saves-list-mobile');
+    
+    if (!desktopList || !mobileList) return;
+
     if (records.length === 0) {
-        recentSavesList.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No records found</td></tr>';
+        desktopList.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No records found</td></tr>';
+        mobileList.innerHTML = '<div class="text-center text-muted py-3">No records found</div>';
         return;
     }
     
-    let html = '';
+    let desktopHtml = '';
+    let mobileHtml = '';
+    
     records.forEach(rec => {
         let dateStr = 'Pending';
         if (rec.timestamp) {
@@ -599,22 +611,46 @@ function renderRecentRecords(records) {
             dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
         }
         
-        html += `
+        let bimClass = 'chip-running';
+        if (rec.bimStatus === 'BIM Start') bimClass = 'chip-start';
+        else if (rec.bimStatus === 'BIM Finish') bimClass = 'chip-finish';
+        
+        // Desktop HTML
+        desktopHtml += `
             <tr>
                 <td data-label="Rec No"><strong>${rec.recordId || rec.id.slice(0,5)}</strong></td>
                 <td data-label="Date">${dateStr}</td>
                 <td data-label="Quality">${rec.quality || '-'}</td>
                 <td data-label="Meter">${rec.meter}</td>
-                <td data-label="BIM">${rec.bimStatus || '-'}</td>
+                <td data-label="BIM"><span class="status-chip ${bimClass}">${rec.bimStatus || '-'}</span></td>
                 <td data-label="Actions" style="white-space: nowrap; text-align: center;">
                     <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary btn-sm" title="Edit">✏️</button>
                     <button onclick="window.deleteFromView('${rec.id}')" class="icon-btn text-danger btn-sm" title="Delete">🗑️</button>
                 </td>
             </tr>
         `;
+
+        // Mobile Card HTML
+        mobileHtml += `
+            <div class="mobile-record-card">
+                <div class="mrc-row">
+                    <span class="mrc-top">${rec.quality || '-'} &nbsp;&bull;&nbsp; ${rec.meter}m</span>
+                    <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary" title="Edit">✏️</button>
+                </div>
+                <div class="mrc-row">
+                    <span class="mrc-sub">${dateStr}</span>
+                    <span class="status-chip ${bimClass}">${rec.bimStatus || '-'}</span>
+                </div>
+                <div class="mrc-row mrc-sub">
+                    <span>Taka: ${rec.taka || '-'}</span>
+                    <span>M/C: <strong>${rec.machineId || '-'}</strong></span>
+                </div>
+            </div>
+        `;
     });
     
-    recentSavesList.innerHTML = html;
+    desktopList.innerHTML = desktopHtml;
+    mobileList.innerHTML = mobileHtml;
 }
 
 async function handleQualitySubmit(e) {
@@ -931,11 +967,30 @@ window.editFromView = async function(id) {
             document.getElementById('bim-status').value = rec.bimStatus || 'BIM Running';
             document.getElementById('note').value = rec.note || '';
 
+            // Update UI for Edit Mode
+            document.getElementById('btn-save').textContent = 'Update & Sync';
+            const badge = document.getElementById('edit-badge');
+            badge.classList.remove('hidden');
+            badge.querySelector('span').textContent = `Editing Record #${rec.recordId || rec.id}`;
+            
+            // Scroll smoothly to form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             showToast('Record loaded for editing', 'success');
         }
     } catch (e) {
         console.error(e);
         showToast('Error loading record', 'error');
+    }
+};
+
+window.cancelEdit = function(focusQuality = false) {
+    document.getElementById('internal-doc-id').value = '';
+    document.getElementById('btn-save').textContent = 'Save & Sync';
+    document.getElementById('edit-badge').classList.add('hidden');
+    resetForm();
+    if (focusQuality) {
+        setTimeout(() => document.getElementById('quality').focus(), 50);
     }
 };
 
