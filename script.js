@@ -237,8 +237,8 @@ function startListeners() {
             let breakdownHtml = '';
             for (const [q, total] of Object.entries(qualityTotals)) {
                 breakdownHtml += `<tr>
-                    <td style="padding: 4px 0; color: #4b5563;"><strong>${q}</strong></td>
-                    <td style="padding: 4px 0; text-align: right; font-weight: bold;">${total.toFixed(1)}m</td>
+                    <td data-label="Quality" style="padding: 4px 0; color: #4b5563;"><strong>${q}</strong></td>
+                    <td data-label="Total" style="padding: 4px 0; text-align: right; font-weight: bold;">${total.toFixed(1)}m</td>
                 </tr>`;
             }
             if (breakdownHtml === '') breakdownHtml = '<tr><td class="text-muted py-2">No production yet today.</td></tr>';
@@ -260,8 +260,8 @@ function startListeners() {
                 reportOptionsHtml += `<option value="${qName}">${qName}</option>`;
                 tableHtml += `
                     <tr>
-                        <td><strong>${qName}</strong></td>
-                        <td style="text-align: center;">
+                        <td data-label="Quality Name"><strong>${qName}</strong></td>
+                        <td data-label="Actions" style="text-align: center;">
                             <button onclick="window.deleteQuality('${doc.id}')" class="icon-btn text-danger" title="Delete">🗑️</button>
                         </td>
                     </tr>
@@ -488,10 +488,10 @@ function renderRecentSaves() {
             // Normal View Mode
             html += `
                 <tr>
-                    <td><strong>${rec.machineId}</strong></td>
-                    <td>${rec.quality || '-'}</td>
-                    <td>${rec.meter}</td>
-                    <td style="white-space: nowrap;">
+                    <td data-label="M/C"><strong>${rec.machineId}</strong></td>
+                    <td data-label="Quality">${rec.quality || '-'}</td>
+                    <td data-label="Meter">${rec.meter}</td>
+                    <td data-label="Actions" style="white-space: nowrap;">
                         <button onclick="window.editRecentRecord('${rec.id}')" class="btn-secondary btn-sm" title="Edit" style="margin-right:5px; padding:0.2rem 0.5rem; background-color: var(--primary-color); color: white;">Edit</button>
                         <button onclick="window.deleteRecentRecord('${rec.id}')" class="btn-danger btn-sm" title="Delete" style="padding:0.2rem 0.5rem;">Delete</button>
                     </td>
@@ -830,13 +830,13 @@ async function loadAllRecordsView() {
             
             html += `
                 <tr>
-                    <td>${data.recordId || '-'}</td>
-                    <td class="text-muted">${dateStr}</td>
-                    <td><strong>${data.machineId}</strong></td>
-                    <td>${data.quality || '-'}</td>
-                    <td>${data.meter}</td>
-                    <td>${data.note || ''}</td>
-                    <td style="white-space: nowrap; text-align: center;">
+                    <td data-label="Rec No">${data.recordId || '-'}</td>
+                    <td data-label="Date" class="text-muted">${dateStr}</td>
+                    <td data-label="M/C"><strong>${data.machineId}</strong></td>
+                    <td data-label="Quality">${data.quality || '-'}</td>
+                    <td data-label="Meter">${data.meter}</td>
+                    <td data-label="Note">${data.note || ''}</td>
+                    <td data-label="Actions" style="white-space: nowrap; text-align: center;">
                         <button onclick="window.editFromView('${doc.id}')" class="icon-btn text-primary" title="Edit">✏️</button>
                         <button onclick="window.deleteFromView('${doc.id}')" class="icon-btn text-danger" title="Delete">🗑️</button>
                     </td>
@@ -927,14 +927,14 @@ function renderReportList(dataList, totalMeters) {
         
         html += `
             <tr class="${rowClass}">
-                <td>${displayId}</td>
-                <td class="text-muted">${dateStr}</td>
-                <td><strong>${data.machineId}</strong></td>
-                <td>${data.quality || '-'}</td>
-                <td>${data.meter}</td>
-                <td>${data.taka || '-'}</td>
-                <td>${data.note || '-'}</td>
-                <td>${data.bimStatus || '-'}</td>
+                <td data-label="ID">${displayId}</td>
+                <td data-label="Date" class="text-muted">${dateStr}</td>
+                <td data-label="M/C"><strong>${data.machineId}</strong></td>
+                <td data-label="Quality">${data.quality || '-'}</td>
+                <td data-label="Meter">${data.meter}</td>
+                <td data-label="Taka">${data.taka || '-'}</td>
+                <td data-label="Note">${data.note || '-'}</td>
+                <td data-label="BIM">${data.bimStatus || '-'}</td>
             </tr>
         `;
     });
