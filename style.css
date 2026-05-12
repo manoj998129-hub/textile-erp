@@ -522,6 +522,7 @@ select.form-input-lg {
 @media (max-width: 768px) {
     .app-container {
         padding: 0.5rem;
+        gap: 0.75rem; /* tighten overall gap */
     }
     
     .card-body {
@@ -534,7 +535,7 @@ select.form-input-lg {
     
     .dynamic-form {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(12, 1fr);
         gap: 8px;
         row-gap: 12px;
     }
@@ -543,15 +544,15 @@ select.form-input-lg {
         margin-bottom: 0 !important;
     }
 
-    /* Grid Mapping */
-    .form-group:has(#record-id) { grid-column: 1; }
-    .form-group:has(#entry-date) { grid-column: 2; }
-    .form-group:has(#machine-id) { grid-column: 1 / -1; }
-    .form-group:has(#quality) { grid-column: 1; }
-    .form-group:has(#meter) { grid-column: 2; }
-    .form-group:has(#taka) { grid-column: 1; }
-    .form-group:has(#bim-status) { grid-column: 2; }
-    .form-group:has(#note) { grid-column: 1 / -1; }
+    /* Grid Mapping without :has() for maximum compatibility */
+    .fg-record { grid-column: span 5; }
+    .fg-date { grid-column: span 7; }
+    .fg-machine { grid-column: span 6; }
+    .fg-quality { grid-column: span 6; }
+    .fg-meter { grid-column: span 4; }
+    .fg-taka { grid-column: span 4; }
+    .fg-bim { grid-column: span 4; }
+    .fg-note { grid-column: span 12; }
 
     /* Row 6: Actions (full width, sticky) */
     .form-actions {
@@ -560,51 +561,142 @@ select.form-input-lg {
         bottom: 10px;
         z-index: 100;
         background: var(--card-bg);
-        padding: 8px;
+        padding: 6px;
         border-radius: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         margin-top: 4px !important;
     }
 
     .form-input-lg, .form-select {
-        height: 42px;
-        font-size: 15px;
-        padding: 0.4rem 0.5rem;
+        height: 44px;
+        font-size: 14px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 0.4rem 0.6rem;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
+        background-color: #fff;
     }
     
     .form-group label {
-        font-size: 13px;
-        margin-bottom: 2px;
+        font-size: 11px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        color: #6b7280;
+        letter-spacing: 0.3px;
+        font-weight: 500;
+    }
+    
+    .fg-record label {
+        color: #c2410c; /* Distinct orange/brown for Rec No label */
     }
 
     .dashboard-widgets {
         grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .widget-card {
+        padding: 0.75rem;
+        align-items: center;
+        text-align: center;
+        border-left: none;
+        border-top: 3px solid var(--primary-color);
+        min-height: auto;
+    }
+    .widget-card:nth-child(2) { border-top-color: #3b82f6; border-left: none; }
+    .widget-card:nth-child(3) { border-top-color: var(--status-normal); border-left: none; }
+    .widget-card:nth-child(4) { border-top-color: var(--status-action); border-left: none; }
+
+    .widget-title {
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.2;
+    }
+
+    .widget-value {
+        font-size: 1.4rem;
+        word-break: break-word;
+        line-height: 1.1;
+        width: 100%;
+        justify-content: center !important;
+    }
+
+    /* Dashboard specific padding reduction */
+    #dashboard-view.active {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .dashboard-meta {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .breakdown-card {
+        padding: 0.75rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .breakdown-title {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .date-navigator {
+        gap: 0.25rem !important;
     }
     
     .desktop-only { display: none !important; }
 
-    /* Compact Mobile Cards for Recent Records */
-    .mobile-record-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 10px;
-        margin-bottom: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+    /* Excel-Style Tabular Grid on Mobile */
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 50vh; /* Enable vertical scrolling */
+        border: 1px solid #4b5563; /* Darker outer border for Excel feel */
+        border-radius: 4px;
+        -webkit-overflow-scrolling: touch;
+        background: #fff;
     }
     
-    .mrc-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 14px;
+    .data-table {
+        white-space: nowrap;
+        font-size: 12px;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    .data-table th, .data-table td {
+        padding: 4px 6px;
+        font-size: 11px;
+        border: 1px solid #9ca3af !important; /* Visible grid lines */
     }
     
-    .mrc-top { font-weight: bold; font-size: 15px; }
-    .mrc-sub { font-size: 13px; color: var(--text-secondary); }
+    .data-table th {
+        position: sticky;
+        top: 0;
+        background: #f3f4f6 !important;
+        z-index: 10;
+        border-bottom: 2px solid #6b7280 !important;
+        color: #111827;
+        font-weight: 600;
+    }
+
+    /* Freeze first column (Rec No) */
+    .data-table th:first-child,
+    .data-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: #fff;
+        z-index: 11;
+        border-right: 2px solid #6b7280 !important;
+    }
+
+    .data-table th:first-child {
+        background: #f3f4f6 !important;
+        z-index: 12;
+    }
 }
 
 @media (min-width: 769px) {
@@ -795,5 +887,154 @@ select.form-input-lg {
 @media (min-width: 769px) {
     .dashboard-widgets.analytics-grid {
         grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* Compact ERP Mobile Data Grid Overrides (Max 768px) */
+@media screen and (max-width: 768px) {
+    /* Force tables to fit width without horizontal scroll */
+    .view-section:not(#dashboard-view) .table-responsive {
+        overflow-x: hidden !important;
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+
+    .view-section:not(#dashboard-view) .data-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        font-family: Arial, sans-serif !important;
+    }
+
+    /* Undo sticky columns since no horizontal scroll exists */
+    .view-section:not(#dashboard-view) .data-table th:first-child, 
+    .view-section:not(#dashboard-view) .data-table td:first-child {
+        position: static !important;
+        z-index: auto !important;
+        background-color: transparent;
+    }
+
+    /* Dense Cell Formatting */
+    .view-section:not(#dashboard-view) .data-table td,
+    .view-section:not(#dashboard-view) .data-table th {
+        padding: 6px 1px !important;
+        white-space: normal !important;
+        word-break: break-all !important;
+        text-align: center;
+        border: 1px solid #d1d5db !important;
+        font-size: 8px !important;
+        vertical-align: middle;
+        line-height: 1.1;
+    }
+
+    /* Proportional Column Widths to fit 100% width */
+    .view-section:not(#dashboard-view) .data-table th:nth-child(1),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(1) { width: 10%; } /* REC NO */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(2),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(2) { width: 16%; word-break: normal !important; } /* DATE */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(3),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(3) { width: 8%; } /* M/C NO */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(4),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(4) { width: 10%; } /* TAKA NO */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(5),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(5) { width: 16%; } /* QUALITY */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(6),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(6) { width: 12%; text-align: right !important; padding-right: 3px !important; } /* METER */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(7),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(7) { width: 12%; } /* NOTE */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(8),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(8) { width: 16%; } /* ACTIONS / BIM */
+
+    /* Theme: Light Green ERP Spreadsheet Header */
+    .view-section:not(#dashboard-view) .data-table th {
+        background-color: #e6f4ea !important; /* Extremely light green */
+        color: #1e8e3e !important; /* Clear dark green */
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+        position: sticky;
+        top: 0;
+        z-index: 10 !important;
+    }
+
+    /* Zebra Striping */
+    .view-section:not(#dashboard-view) .data-table tbody tr:nth-child(even) td {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Compact Actions */
+    .view-section:not(#dashboard-view) .data-table .icon-btn {
+        padding: 0;
+        font-size: 11px;
+        width: 16px;
+        height: 16px;
+        margin: 0 2px;
+    }
+
+    /* Preserve specific Entry view overrides on top row */
+    #entry-view .data-table td:first-child strong {
+        color: var(--primary-color) !important;
+    }
+    #entry-view .data-table tbody tr:first-child td {
+        background-color: #fff7ed !important;
+    }
+    #entry-view .data-table tbody tr:first-child td:first-child {
+        border-left: 2px solid var(--primary-color) !important;
+    }
+
+    /* Style the Save & Sync button */
+    #entry-view #btn-save {
+        height: 50px;
+        font-size: 18px;
+        letter-spacing: 1px;
+        border-radius: 8px;
+    }
+    
+    #entry-view .fg-record input {
+        background-color: #f3f4f6 !important;
+        color: #4b5563;
+        font-weight: 500;
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    #entry-view .fg-taka input {
+        background-color: #fff !important; /* In screenshot, Taka No is white */
+        color: #111827;
+    }
+
+    /* Mobile Pagination styling */
+    .mobile-pagination-bar {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: #fafafa;
+        border-bottom: 1px solid #d1d5db;
+        border-radius: 8px 8px 0 0;
+    }
+    .mobile-pagination-bar button {
+        background: #fff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .mobile-pagination-bar .page-info {
+        font-size: 12px;
+        font-weight: bold;
+        color: #111827;
     }
 }

@@ -88,15 +88,15 @@
                     <form id="production-form" class="dynamic-form">
                         <input type="hidden" id="internal-doc-id" name="internalDocId">
                         <div class="form-row">
-                            <div class="form-group flex-shrink-0 w-compact">
+                            <div class="form-group fg-record flex-shrink-0 w-compact">
                                 <label for="record-id">Rec No</label>
                                 <input type="text" id="record-id" name="recordId" readonly placeholder="Auto" class="input-readonly text-center font-bold">
                             </div>
-                            <div class="form-group flex-grow-1">
+                            <div class="form-group fg-date flex-grow-1">
                                 <label for="entry-date">Date</label>
                                 <input type="date" id="entry-date" name="entryDate" required class="form-input-lg">
                             </div>
-                            <div class="form-group flex-grow-1">
+                            <div class="form-group fg-machine flex-grow-1">
                                 <label for="machine-id">M/C Number</label>
                                 <select id="machine-id" name="machineId" required class="form-input-lg">
                                     <option value="" disabled selected>Select M/C</option>
@@ -105,23 +105,23 @@
                             </div>
                         </div>
                         <div class="form-row three-cols">
-                            <div class="form-group">
+                            <div class="form-group fg-quality">
                                 <label for="quality">Quality</label>
                                 <select id="quality" name="quality" required class="form-input-lg">
                                     <option value="" disabled selected>Select Quality</option>
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group fg-meter">
                                 <label for="meter">Meter</label>
                                 <input type="number" id="meter" name="meter" step="0.1" required placeholder="e.g., 50.5" class="form-input-lg">
                             </div>
-                            <div class="form-group">
+                            <div class="form-group fg-taka">
                                 <label for="taka">Taka Number</label>
                                 <input type="number" id="taka" name="taka" placeholder="Loading..." required class="form-input-lg input-readonly" readonly>
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group">
+                            <div class="form-group fg-bim">
                                 <label for="bim-status">BIM Status</label>
                                 <select id="bim-status" name="bimStatus" class="form-select form-input-lg">
                                     <option value="BIM Running">BIM Running</option>
@@ -129,7 +129,7 @@
                                     <option value="BIM Start">BIM Start</option>
                                 </select>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group fg-note">
                                 <label for="note">Note</label>
                                 <input type="text" id="note" name="note" list="note-suggestions" placeholder="Add a note..." class="form-input-lg">
                                 <datalist id="note-suggestions">
@@ -153,28 +153,24 @@
                             </div>
                         </div>
                         
-                        <!-- Desktop Table View -->
-                        <div class="table-responsive desktop-only">
+                        <div class="table-responsive">
                             <table class="data-table compact-table">
                                 <thead>
                                     <tr>
                                         <th>Rec No</th>
                                         <th>Date</th>
+                                        <th>M/C No</th>
+                                        <th>Taka No</th>
                                         <th>Quality</th>
                                         <th>Meter</th>
-                                        <th>BIM Status</th>
+                                        <th>Note</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="recent-saves-list-desktop">
-                                    <tr><td colspan="6" class="text-center text-muted py-3">Loading records...</td></tr>
+                                <tbody id="recent-saves-list">
+                                    <tr><td colspan="8" class="text-center text-muted py-3">Loading records...</td></tr>
                                 </tbody>
                             </table>
-                        </div>
-
-                        <!-- Mobile Cards View -->
-                        <div id="recent-saves-list-mobile" class="mobile-only">
-                            <!-- Populated by JS -->
                         </div>
                     </div>
                 </div>
@@ -224,8 +220,14 @@
                         <button class="icon-btn btn-sm" id="btn-qual-next" disabled>▶</button>
                     </div>
                 </div>
-                <div class="table-responsive mobile-cards-container">
-                    <table class="data-table mobile-cards">
+                <div class="table-responsive">
+                    <table class="data-table compact-table">
+                        <thead>
+                            <tr>
+                                <th>Quality</th>
+                                <th>Total Meters</th>
+                            </tr>
+                        </thead>
                         <tbody id="quality-breakdown-list">
                             <tr><td class="text-muted text-center" colspan="2"><span class="loading-skeleton w-50"></span></td></tr>
                         </tbody>
@@ -242,13 +244,25 @@
                     <span class="text-muted text-sm">Latest 200</span>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive mobile-cards-container max-h-70vh">
-                        <table class="data-table mobile-cards compact-table striped-table">
+                    <div class="mobile-pagination-bar" style="display: none;"> <!-- Shown via CSS on mobile only -->
+                        <div class="flex-gap-2">
+                            <button type="button">|&lt;</button>
+                            <button type="button">&lt;</button>
+                        </div>
+                        <div class="page-info">Page 1 of 200</div>
+                        <div class="flex-gap-2">
+                            <button type="button">&gt;</button>
+                            <button type="button">&gt;|</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive max-h-70vh">
+                        <table class="data-table compact-table striped-table">
                             <thead>
                                 <tr>
                                     <th>Rec No</th>
                                     <th>Date</th>
-                                    <th>M/C</th>
+                                    <th>M/C No</th>
+                                    <th>Taka No</th>
                                     <th>Quality</th>
                                     <th>Meter</th>
                                     <th>Note</th>
@@ -346,16 +360,16 @@
                     <button id="btn-global-print" class="btn-secondary btn-sm" onclick="window.print()">🖨️ Print</button>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive mobile-cards-container">
-                        <table class="data-table mobile-cards striped-table">
+                    <div class="table-responsive">
+                        <table class="data-table striped-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Date</th>
-                                    <th>M/C</th>
+                                    <th>M/C No</th>
+                                    <th>Taka No</th>
                                     <th>Quality</th>
                                     <th>Meter</th>
-                                    <th>Taka</th>
                                     <th>Note</th>
                                     <th>BIM</th>
                                 </tr>
@@ -365,10 +379,9 @@
                             </tbody>
                             <tfoot id="report-tfoot" class="hidden font-bold bg-light">
                                 <tr>
-                                    <td colspan="4" class="text-right pr-3 desktop-only">TOTAL</td>
-                                    <td colspan="1" class="text-right pr-3 mobile-only" data-label="TOTAL"></td>
+                                    <td colspan="4" class="text-right pr-3">TOTAL</td>
                                     <td id="table-total-meters" data-label="Total Meters">0</td>
-                                    <td colspan="3" class="desktop-only"></td>
+                                    <td colspan="3"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -406,8 +419,8 @@
                     <h2>Quality List</h2>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive mobile-cards-container">
-                        <table class="data-table mobile-cards striped-table">
+                    <div class="table-responsive">
+                        <table class="data-table striped-table">
                             <thead>
                                 <tr>
                                     <th>Quality Name</th>

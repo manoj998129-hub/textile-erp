@@ -590,19 +590,15 @@ async function fetchRecentRecords(reset = false) {
 }
 
 function renderRecentRecords(records) {
-    const desktopList = document.getElementById('recent-saves-list-desktop');
-    const mobileList = document.getElementById('recent-saves-list-mobile');
-    
-    if (!desktopList || !mobileList) return;
+    const listEl = document.getElementById('recent-saves-list');
+    if (!listEl) return;
 
     if (records.length === 0) {
-        desktopList.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No records found</td></tr>';
-        mobileList.innerHTML = '<div class="text-center text-muted py-3">No records found</div>';
+        listEl.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No records found</td></tr>';
         return;
     }
     
-    let desktopHtml = '';
-    let mobileHtml = '';
+    let html = '';
     
     records.forEach(rec => {
         let dateStr = 'Pending';
@@ -615,42 +611,24 @@ function renderRecentRecords(records) {
         if (rec.bimStatus === 'BIM Start') bimClass = 'chip-start';
         else if (rec.bimStatus === 'BIM Finish') bimClass = 'chip-finish';
         
-        // Desktop HTML
-        desktopHtml += `
+        html += `
             <tr>
                 <td data-label="Rec No"><strong>${rec.recordId || rec.id.slice(0,5)}</strong></td>
                 <td data-label="Date">${dateStr}</td>
+                <td data-label="M/C No"><strong>${rec.machineId || '-'}</strong></td>
+                <td data-label="Taka No"><strong>${rec.taka || '-'}</strong></td>
                 <td data-label="Quality">${rec.quality || '-'}</td>
                 <td data-label="Meter">${rec.meter}</td>
-                <td data-label="BIM"><span class="status-chip ${bimClass}">${rec.bimStatus || '-'}</span></td>
+                <td data-label="Note">${rec.note || ''}</td>
                 <td data-label="Actions" style="white-space: nowrap; text-align: center;">
                     <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary btn-sm" title="Edit">✏️</button>
                     <button onclick="window.deleteFromView('${rec.id}')" class="icon-btn text-danger btn-sm" title="Delete">🗑️</button>
                 </td>
             </tr>
         `;
-
-        // Mobile Card HTML
-        mobileHtml += `
-            <div class="mobile-record-card">
-                <div class="mrc-row">
-                    <span class="mrc-top">${rec.quality || '-'} &nbsp;&bull;&nbsp; ${rec.meter}m</span>
-                    <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary" title="Edit">✏️</button>
-                </div>
-                <div class="mrc-row">
-                    <span class="mrc-sub">${dateStr}</span>
-                    <span class="status-chip ${bimClass}">${rec.bimStatus || '-'}</span>
-                </div>
-                <div class="mrc-row mrc-sub">
-                    <span>Taka: ${rec.taka || '-'}</span>
-                    <span>M/C: <strong>${rec.machineId || '-'}</strong></span>
-                </div>
-            </div>
-        `;
     });
     
-    desktopList.innerHTML = desktopHtml;
-    mobileList.innerHTML = mobileHtml;
+    listEl.innerHTML = html;
 }
 
 async function handleQualitySubmit(e) {
@@ -925,7 +903,8 @@ async function loadAllRecordsView() {
                 <tr>
                     <td data-label="Rec No">${data.recordId || '-'}</td>
                     <td data-label="Date" class="text-muted">${dateStr}</td>
-                    <td data-label="M/C"><strong>${data.machineId}</strong></td>
+                    <td data-label="M/C No"><strong>${data.machineId}</strong></td>
+                    <td data-label="Taka No"><strong>${data.taka || '-'}</strong></td>
                     <td data-label="Quality">${data.quality || '-'}</td>
                     <td data-label="Meter">${data.meter}</td>
                     <td data-label="Note">${data.note || ''}</td>
@@ -1047,10 +1026,10 @@ function renderReportList(dataList, totalMeters) {
             <tr class="${rowClass}">
                 <td data-label="ID">${displayId}</td>
                 <td data-label="Date" class="text-muted">${dateStr}</td>
-                <td data-label="M/C"><strong>${data.machineId}</strong></td>
+                <td data-label="M/C No"><strong>${data.machineId}</strong></td>
+                <td data-label="Taka No"><strong>${data.taka || '-'}</strong></td>
                 <td data-label="Quality">${data.quality || '-'}</td>
                 <td data-label="Meter">${data.meter}</td>
-                <td data-label="Taka">${data.taka || '-'}</td>
                 <td data-label="Note">${data.note || '-'}</td>
                 <td data-label="BIM">${data.bimStatus || '-'}</td>
             </tr>
@@ -1182,12 +1161,22 @@ function loadQualityBreakdown(dateObj) {
             });
 
             let breakdownHtml = '';
+            let grandTotal = 0;
             for (const [q, total] of Object.entries(qualityTotals)) {
                 breakdownHtml += `<tr>
-                    <td data-label="Quality Name" style="padding: 6px 0;"><strong>${q}</strong></td>
-                    <td data-label="Total Meter Production" style="text-align: right; font-weight: bold; padding: 6px 0;">${total.toFixed(1)}m</td>
+                    <td data-label="Quality Name"><strong>${q}</strong></td>
+                    <td data-label="Total Meter Production" style="text-align: right; font-weight: bold;">${total.toFixed(1)}m</td>
                 </tr>`;
+                grandTotal += total;
             }
+            
+            breakdownHtml += `
+                <tr style="background: rgba(0,0,0,0.02);">
+                    <td data-label="Total" style="font-weight: bold; border-top: 2px solid var(--border-color) !important;">TOTAL</td>
+                    <td data-label="Total Meter" style="text-align: right; font-weight: bold; color: var(--primary-color); border-top: 2px solid var(--border-color) !important; font-size: 1.1em;">${grandTotal.toFixed(1)}m</td>
+                </tr>
+            `;
+            
             list.innerHTML = breakdownHtml;
         }, err => {
             console.error('Quality breakdown error:', err);
