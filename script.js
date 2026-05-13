@@ -52,6 +52,21 @@ function initUI() {
 
     // Settings Tab Events
     document.getElementById('config-form').addEventListener('submit', handleConfigSubmit);
+    
+    // Edit Firebase settings button
+    const btnEditFirebase = document.getElementById('btn-edit-firebase');
+    if (btnEditFirebase) {
+        btnEditFirebase.addEventListener('click', () => {
+            const inputs = ['apiKey', 'authDomain', 'projectId', 'gasUrl'];
+            inputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('readonly');
+            });
+            document.getElementById('btn-save-firebase').disabled = false;
+            // Optionally focus first field
+            document.getElementById('apiKey').focus();
+        });
+    }
     document.getElementById('taka-config-form').addEventListener('submit', handleTakaConfigSubmit);
     document.getElementById('btn-wipe').addEventListener('click', handleWipeData);
     document.getElementById('btn-backup').addEventListener('click', generateExcelBackup);
@@ -162,8 +177,23 @@ function updateOnlineStatus() {
 
 // --- Firebase & Config ---
 
+const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBJYOitiHjphiEzgZx0ni9-sTAHJyZMDWw",
+    authDomain: "aarohi-production.firebaseapp.com",
+    projectId: "aarohi-production",
+    gasUrl: ""
+};
+
 function getFirebaseConfig() {
-    return JSON.parse(localStorage.getItem('firebase_config') || 'null');
+    const saved = localStorage.getItem('firebase_config');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch(e) {
+            console.error("Invalid saved Firebase config, falling back to defaults.", e);
+        }
+    }
+    return DEFAULT_FIREBASE_CONFIG;
 }
 
 function handleConfigSubmit(e) {
@@ -181,6 +211,7 @@ function handleConfigSubmit(e) {
 
 async function initFirebase() {
     const config = getFirebaseConfig();
+    
     if (config) {
         document.getElementById('apiKey').value = config.apiKey || '';
         document.getElementById('authDomain').value = config.authDomain || '';
@@ -189,8 +220,7 @@ async function initFirebase() {
     }
 
     if (!config || !config.projectId) {
-        showToast('Please configure Firebase in Settings Tab', 'error');
-        document.querySelector('.tab-btn[data-target="settings-view"]').click();
+        showToast('Invalid Firebase Config Defaults', 'error');
         return;
     }
 
@@ -348,9 +378,9 @@ function startListeners() {
                 reportOptionsHtml += `<option value="${qName}">${qName}</option>`;
                 tableHtml += `
                     <tr>
-                        <td data-label="Quality Name"><strong>${qName}</strong></td>
+                        <td data-label="Quality Name"><strong style="font-size: 1.1em;">${qName}</strong></td>
                         <td data-label="Actions" style="text-align: center;">
-                            <button onclick="window.deleteQuality('${doc.id}')" class="icon-btn text-danger" title="Delete">🗑️</button>
+                            <button onclick="window.deleteQuality('${doc.id}')" class="erp-action-btn btn-delete" title="Delete">&times;</button>
                         </td>
                     </tr>
                 `;
@@ -604,12 +634,17 @@ function renderRecentRecords(records) {
         let dateStr = 'Pending';
         if (rec.timestamp) {
             const d = new Date(rec.timestamp.toDate());
-            dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+            dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
         }
         
         let bimClass = 'chip-running';
         if (rec.bimStatus === 'BIM Start') bimClass = 'chip-start';
         else if (rec.bimStatus === 'BIM Finish') bimClass = 'chip-finish';
+        
+        let bimShort = '';
+        if (rec.bimStatus === 'BIM Finish') bimShort = 'F';
+        else if (rec.bimStatus === 'BIM Start') bimShort = 'S';
+        else if (rec.bimStatus === 'BIM Running') bimShort = 'R';
         
         html += `
             <tr>
@@ -619,10 +654,11 @@ function renderRecentRecords(records) {
                 <td data-label="Taka No"><strong>${rec.taka || '-'}</strong></td>
                 <td data-label="Quality">${rec.quality || '-'}</td>
                 <td data-label="Meter">${rec.meter}</td>
+                <td data-label="BIM" class="font-bold text-center">${bimShort || '-'}</td>
                 <td data-label="Note">${rec.note || ''}</td>
                 <td data-label="Actions" style="white-space: nowrap; text-align: center;">
-                    <button onclick="window.editFromView('${rec.id}')" class="icon-btn text-primary btn-sm" title="Edit">✏️</button>
-                    <button onclick="window.deleteFromView('${rec.id}')" class="icon-btn text-danger btn-sm" title="Delete">🗑️</button>
+                    <button onclick="window.editFromView('${rec.id}')" class="erp-action-btn btn-edit" title="Edit">&#x270E;</button>
+                    <button onclick="window.deleteFromView('${rec.id}')" class="erp-action-btn btn-delete" title="Delete">&times;</button>
                 </td>
             </tr>
         `;
@@ -689,7 +725,12 @@ async function handleWipeData() {
     if (!db) return showToast('Database not connected', 'error');
     
     const passInput = document.getElementById('wipe-password');
-    const pass = passInput.value;
+    let pass = passInput.value;
+
+    if (!pass) {
+        pass = prompt('Enter admin password to confirm deletion:');
+        if (pass === null) return;
+    }
 
     if (pass !== 'table360') {
         showToast('Incorrect password', 'error');
@@ -897,20 +938,30 @@ async function loadAllRecordsView() {
         let html = '';
         snapshot.forEach(doc => {
             const data = doc.data();
-            const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'}) : 'Pending';
+            let dateStr = 'Pending';
+            if (data.timestamp) {
+                const d = new Date(data.timestamp.toDate());
+                dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
+            }
+            
+            let bimShort = '';
+            if (data.bimStatus === 'BIM Finish') bimShort = 'F';
+            else if (data.bimStatus === 'BIM Start') bimShort = 'S';
+            else if (data.bimStatus === 'BIM Running') bimShort = 'R';
             
             html += `
                 <tr>
-                    <td data-label="Rec No">${data.recordId || '-'}</td>
+                    <td data-label="Rec No"><strong>${data.recordId || '-'}</strong></td>
                     <td data-label="Date" class="text-muted">${dateStr}</td>
                     <td data-label="M/C No"><strong>${data.machineId}</strong></td>
                     <td data-label="Taka No"><strong>${data.taka || '-'}</strong></td>
                     <td data-label="Quality">${data.quality || '-'}</td>
                     <td data-label="Meter">${data.meter}</td>
+                    <td data-label="BIM" class="font-bold text-center">${bimShort || '-'}</td>
                     <td data-label="Note">${data.note || ''}</td>
                     <td data-label="Actions" style="white-space: nowrap; text-align: center;">
-                        <button onclick="window.editFromView('${doc.id}')" class="icon-btn text-primary" title="Edit">✏️</button>
-                        <button onclick="window.deleteFromView('${doc.id}')" class="icon-btn text-danger" title="Delete">🗑️</button>
+                        <button onclick="window.editFromView('${doc.id}')" class="erp-action-btn btn-edit" title="Edit">&#x270E;</button>
+                        <button onclick="window.deleteFromView('${doc.id}')" class="erp-action-btn btn-delete" title="Delete">&times;</button>
                     </td>
                 </tr>
             `;
@@ -1020,11 +1071,10 @@ function renderReportList(dataList, totalMeters) {
             dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${d.toLocaleString('en-US', {hour: '2-digit', minute:'2-digit', hour12: true})}`;
         }
         const rowClass = data.bimStatus === 'BIM Finish' ? 'bim-finish' : (data.bimStatus === 'BIM Start' ? 'bim-start' : '');
-        const displayId = 'A' + (index + 1);
         
         html += `
             <tr class="${rowClass}">
-                <td data-label="ID">${displayId}</td>
+                <td data-label="Rec No">${data.recordId || '-'}</td>
                 <td data-label="Date" class="text-muted">${dateStr}</td>
                 <td data-label="M/C No"><strong>${data.machineId}</strong></td>
                 <td data-label="Taka No"><strong>${data.taka || '-'}</strong></td>
@@ -1156,24 +1206,29 @@ function loadQualityBreakdown(dateObj) {
                 const data = doc.data();
                 const q = data.quality || 'Unknown';
                 const m = data.meter || 0;
-                if (!qualityTotals[q]) qualityTotals[q] = 0;
-                qualityTotals[q] += m;
+                if (!qualityTotals[q]) qualityTotals[q] = { meter: 0, takaCount: 0 };
+                qualityTotals[q].meter += m;
+                qualityTotals[q].takaCount += 1;
             });
 
             let breakdownHtml = '';
-            let grandTotal = 0;
-            for (const [q, total] of Object.entries(qualityTotals)) {
+            let grandTotalMeters = 0;
+            let grandTotalTaka = 0;
+            for (const [q, stats] of Object.entries(qualityTotals)) {
                 breakdownHtml += `<tr>
                     <td data-label="Quality Name"><strong>${q}</strong></td>
-                    <td data-label="Total Meter Production" style="text-align: right; font-weight: bold;">${total.toFixed(1)}m</td>
+                    <td class="mobile-only" data-label="Total Taka" style="text-align: center;">${stats.takaCount}</td>
+                    <td data-label="Total Meter Production" style="text-align: right; font-weight: bold;">${stats.meter.toFixed(1)}m</td>
                 </tr>`;
-                grandTotal += total;
+                grandTotalMeters += stats.meter;
+                grandTotalTaka += stats.takaCount;
             }
             
             breakdownHtml += `
                 <tr style="background: rgba(0,0,0,0.02);">
                     <td data-label="Total" style="font-weight: bold; border-top: 2px solid var(--border-color) !important;">TOTAL</td>
-                    <td data-label="Total Meter" style="text-align: right; font-weight: bold; color: var(--primary-color); border-top: 2px solid var(--border-color) !important; font-size: 1.1em;">${grandTotal.toFixed(1)}m</td>
+                    <td class="mobile-only" data-label="Total Taka" style="text-align: center; font-weight: bold; border-top: 2px solid var(--border-color) !important;">${grandTotalTaka}</td>
+                    <td data-label="Total Meter" style="text-align: right; font-weight: bold; color: var(--primary-color); border-top: 2px solid var(--border-color) !important; font-size: 1.1em;">${grandTotalMeters.toFixed(1)}m</td>
                 </tr>
             `;
             
@@ -1208,3 +1263,60 @@ document.getElementById('btn-qual-next').addEventListener('click', () => {
     updateQualityDateDisplay();
     loadQualityBreakdown(currentQualityDate);
 });
+
+// Optimized Mobile Print Workflow
+window.prepareAndPrint = function() {
+    // 1. Get the target containers
+    const printContainer = document.getElementById('print-container');
+    const headerOriginal = document.getElementById('print-header');
+    const footerOriginal = document.getElementById('print-footer');
+    
+    // Ensure they exist
+    if (!printContainer || !headerOriginal) return;
+
+    // 2. Extract active report list HTML without deep cloning the entire page
+    const tableBodyHTML = document.getElementById('report-list').innerHTML;
+    const tableFootHTML = document.getElementById('report-tfoot').innerHTML;
+    
+    // 3. Construct clean lightweight DOM inside print container
+    printContainer.innerHTML = `
+        <div class="print-header-wrapper">
+            ${headerOriginal.innerHTML}
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Rec No</th>
+                        <th>Date</th>
+                        <th>M/C No</th>
+                        <th>Taka No</th>
+                        <th>Quality</th>
+                        <th>Meter</th>
+                        <th>Note</th>
+                        <th>BIM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableBodyHTML}
+                </tbody>
+                <tfoot>
+                    ${tableFootHTML}
+                </tfoot>
+            </table>
+        </div>
+        <div class="print-footer">
+            ${footerOriginal ? footerOriginal.innerHTML : 'Generated by Aarohi Production System'}
+        </div>
+    `;
+    
+    // 4. Force browser to recalculate layouts by letting event loop tick
+    setTimeout(() => {
+        window.print();
+        
+        // 5. Cleanup memory and DOM after print dialog
+        setTimeout(() => {
+            printContainer.innerHTML = '';
+        }, 1000);
+    }, 100);
+};

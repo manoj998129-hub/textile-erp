@@ -163,6 +163,7 @@
                                         <th>Taka No</th>
                                         <th>Quality</th>
                                         <th>Meter</th>
+                                        <th>BIM</th>
                                         <th>Note</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
@@ -225,6 +226,7 @@
                         <thead>
                             <tr>
                                 <th>Quality</th>
+                                <th class="mobile-only text-center">Total Taka</th>
                                 <th>Total Meters</th>
                             </tr>
                         </thead>
@@ -265,6 +267,7 @@
                                     <th>Taka No</th>
                                     <th>Quality</th>
                                     <th>Meter</th>
+                                    <th>BIM</th>
                                     <th>Note</th>
                                     <th class="text-center">Actions</th>
                                 </tr>
@@ -288,27 +291,27 @@
                     <form id="report-form" class="dynamic-form">
                         <div class="form-grid-responsive">
                             <div class="form-group">
-                                <label for="report-from-date">From Date</label>
+                                <label for="report-from-date">FROM DATE</label>
                                 <input type="date" id="report-from-date" name="fromDate" class="form-input-lg">
                             </div>
                             <div class="form-group">
-                                <label for="report-to-date">To Date</label>
+                                <label for="report-to-date">TO DATE</label>
                                 <input type="date" id="report-to-date" name="toDate" class="form-input-lg">
                             </div>
                             <div class="form-group">
-                                <label for="report-mc">M/C Number</label>
-                                <input type="number" id="report-mc" name="mcNumber" min="1" max="50" placeholder="All" class="form-input-lg">
+                                <label for="report-mc">M/C NUMBER</label>
+                                <input type="number" id="report-mc" name="mcNumber" min="1" max="50" placeholder="All Machines" class="form-input-lg">
                             </div>
                             <div class="form-group">
-                                <label for="report-quality">Quality</label>
+                                <label for="report-quality">QUALITY STATUS</label>
                                 <select id="report-quality" name="quality" class="form-select form-input-lg">
-                                    <option value="">All</option>
+                                    <option value="">All Quality States</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="report-bim">BIM Status</label>
+                                <label for="report-bim">BIM STATUS</label>
                                 <select id="report-bim" name="bimStatus" class="form-select form-input-lg">
-                                    <option value="">All</option>
+                                    <option value="">All BIM Status</option>
                                     <option value="BIM Running">BIM Running</option>
                                     <option value="BIM Finish">BIM Finish</option>
                                     <option value="BIM Start">BIM Start</option>
@@ -316,7 +319,10 @@
                             </div>
                         </div>
                         <div class="form-actions mt-3">
-                            <button type="submit" class="btn-primary w-100">Generate Report</button>
+                            <button type="submit" class="btn-primary w-100 font-bold" style="letter-spacing: 1px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="M8 17V11"></path><path d="M12 17V7"></path><path d="M16 17V13"></path></svg> 
+                                GENERATE REPORT
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -357,14 +363,14 @@
 
                 <div class="card-header flex-between align-center">
                     <h2>Report Results</h2>
-                    <button id="btn-global-print" class="btn-secondary btn-sm" onclick="window.print()">🖨️ Print</button>
+                    <button id="btn-global-print" class="btn-secondary btn-sm" onclick="window.prepareAndPrint()">🖨️ Print</button>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="data-table striped-table">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Rec No</th>
                                     <th>Date</th>
                                     <th>M/C No</th>
                                     <th>Taka No</th>
@@ -397,34 +403,36 @@
 
         <!-- Quality Master View -->
         <div id="quality-view" class="view-section">
-            <section class="card glass-effect mb-4">
+            <section class="card glass-effect mb-4 quality-add-card">
                 <div class="card-header">
                     <h2>Add New Quality</h2>
                 </div>
                 <div class="card-body">
                     <form id="quality-form" class="dynamic-form">
-                        <div class="form-row">
-                            <div class="form-group flex-grow-1">
-                                <label for="new-quality-name">Quality Name</label>
-                                <input type="text" id="new-quality-name" name="qualityName" required placeholder="Enter Quality Name" class="form-input-lg">
+                        <div class="form-row quality-form-row">
+                            <div class="form-group flex-grow-1 quality-input-group">
+                                <label for="new-quality-name"><span class="desktop-only">Quality Name</span><span class="mobile-only">QUALITY NAME</span></label>
+                                <input type="text" id="new-quality-name" name="qualityName" required placeholder="Enter name..." class="form-input-lg">
+                            </div>
+                            <div class="quality-btn-group">
+                                <button type="submit" class="btn-primary mt-2 quality-add-btn">Add Quality</button>
                             </div>
                         </div>
-                        <button type="submit" class="btn-primary mt-2">Add Quality</button>
                     </form>
                 </div>
             </section>
 
-            <section class="card glass-effect">
+            <section class="card glass-effect quality-list-card">
                 <div class="card-header">
                     <h2>Quality List</h2>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="data-table striped-table">
+                        <table class="data-table striped-table quality-table">
                             <thead>
                                 <tr>
-                                    <th>Quality Name</th>
-                                    <th class="text-center w-20">Actions</th>
+                                    <th><span class="desktop-only">Quality Name</span><span class="mobile-only">QUALITY NAME</span></th>
+                                    <th class="text-center w-20"><span class="desktop-only">Actions</span><span class="mobile-only">ACTIONS</span></th>
                                 </tr>
                             </thead>
                             <tbody id="quality-list-table">
@@ -443,16 +451,16 @@
                 <!-- Taka Settings -->
                 <section class="card glass-effect">
                     <div class="card-header">
-                        <h2>Taka Configuration</h2>
+                        <h2><span class="desktop-only">Taka Configuration</span><span class="mobile-only">TAKA CONFIGURATION</span></h2>
                     </div>
                     <div class="card-body">
                         <form id="taka-config-form" class="dynamic-form">
                             <div class="form-group mb-3">
-                                <label for="starting-taka">Set Starting Taka Number</label>
-                                <input type="number" id="starting-taka" min="1" required placeholder="e.g., 1000" class="form-input-lg">
-                                <small class="text-muted mt-1 block">Affects future entries. Do not set below current max.</small>
+                                <label for="starting-taka"><span class="desktop-only">Set Starting Taka Number</span><span class="mobile-only">START NO.</span></label>
+                                <input type="number" id="starting-taka" min="1" required placeholder="5000" class="form-input-lg">
+                                <small class="text-muted mt-1 block"><span class="desktop-only">Affects future entries. Do not set below current max.</span><span class="mobile-only">Future entries only. Minimum: current max.</span></small>
                             </div>
-                            <button type="submit" class="btn-primary w-100">Save Taka Settings</button>
+                            <button type="submit" class="btn-primary w-100"><span class="desktop-only">Save Taka Settings</span><span class="mobile-only">SAVE CONFIGURATION</span></button>
                         </form>
                     </div>
                 </section>
@@ -460,21 +468,21 @@
                 <!-- Authentication Settings -->
                 <section class="card glass-effect">
                     <div class="card-header">
-                        <h2>Authentication Settings</h2>
+                        <h2><span class="desktop-only">Authentication Settings</span><span class="mobile-only">AUTHENTICATION</span></h2>
                     </div>
                     <div class="card-body">
                         <form id="auth-config-form" class="dynamic-form">
                             <div class="form-row">
                                 <div class="form-group flex-grow-1">
-                                    <label for="auth-new-user">New Username</label>
-                                    <input type="text" id="auth-new-user" required class="form-input-lg">
+                                    <label for="auth-new-user"><span class="desktop-only">New Username</span><span class="mobile-only">USERNAME</span></label>
+                                    <input type="text" id="auth-new-user" required class="form-input-lg" placeholder="admin_user">
                                 </div>
                                 <div class="form-group flex-grow-1">
-                                    <label for="auth-new-pass">New Password</label>
-                                    <input type="password" id="auth-new-pass" required class="form-input-lg">
+                                    <label for="auth-new-pass"><span class="desktop-only">New Password</span><span class="mobile-only">PASSWORD</span></label>
+                                    <input type="password" id="auth-new-pass" required class="form-input-lg" placeholder="••••••••">
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary w-100 mt-3">Update Credentials</button>
+                            <button type="submit" class="btn-primary w-100 mt-3"><span class="desktop-only">Update Credentials</span><span class="mobile-only">UPDATE CREDENTIALS</span></button>
                         </form>
                     </div>
                 </section>
@@ -482,29 +490,32 @@
                 <!-- Firebase Config -->
                 <section class="card glass-effect md-col-span-2">
                     <div class="card-header">
-                        <h2>Firebase Config</h2>
+                        <h2><span class="desktop-only">Firebase Config</span><span class="mobile-only">DATABASE CONNECTIVITY</span></h2>
                     </div>
                     <div class="card-body">
                         <form id="config-form" class="dynamic-form">
                             <div class="form-grid-responsive">
                                 <div class="form-group">
-                                    <label for="apiKey">API Key</label>
-                                    <input type="text" id="apiKey" required class="form-input-lg">
+                                    <label for="apiKey"><span class="desktop-only">API Key</span><span class="mobile-only">API KEY</span></label>
+                                    <input type="text" id="apiKey" required class="form-input-lg" placeholder="AIzaSy...7x8" readonly>
                                 </div>
                                 <div class="form-group">
-                                    <label for="authDomain">Auth Domain</label>
-                                    <input type="text" id="authDomain" required class="form-input-lg">
+                                    <label for="authDomain"><span class="desktop-only">Auth Domain</span><span class="mobile-only">AUTH DOMAIN</span></label>
+                                    <input type="text" id="authDomain" required class="form-input-lg" placeholder="factory-mngr.firebaseapp.com" readonly>
                                 </div>
                                 <div class="form-group">
-                                    <label for="projectId">Project ID</label>
-                                    <input type="text" id="projectId" required class="form-input-lg">
+                                    <label for="projectId"><span class="desktop-only">Project ID</span><span class="mobile-only">PROJECT ID</span></label>
+                                    <input type="text" id="projectId" required class="form-input-lg" placeholder="factory-mngr-92a" readonly>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group mobile-hide-group">
                                     <label for="gasUrl">Google Apps Script URL (Optional)</label>
-                                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/..." class="form-input-lg">
+                                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/..." class="form-input-lg" readonly>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary mt-3">Save Connection</button>
+                            <div class="form-actions mt-3 flex-gap-2">
+                                <button type="button" id="btn-edit-firebase" class="btn-secondary flex-grow-1"><span class="desktop-only">Edit Settings</span><span class="mobile-only">EDIT</span></button>
+                                <button type="submit" id="btn-save-firebase" class="btn-primary flex-grow-1" disabled><span class="desktop-only">Save Connection</span><span class="mobile-only">SYNC CONNECTION</span></button>
+                            </div>
                         </form>
                     </div>
                 </section>
@@ -512,22 +523,40 @@
                 <!-- Data Management (Wipe & Backup) -->
                 <section class="card glass-effect danger-zone md-col-span-2">
                     <div class="card-header border-danger">
-                        <h2 class="text-danger">Danger Zone</h2>
+                        <h2 class="text-danger"><span class="desktop-only">Danger Zone</span><span class="mobile-only">SYSTEM OPERATIONS (CRITICAL)</span></h2>
                     </div>
                     <div class="card-body">
-                        <div class="flex-column gap-3">
-                            <div>
-                                <button id="btn-backup" class="btn-secondary w-100">📊 Backup Data to Excel</button>
-                                <small class="text-muted block mt-1">Download all production data.</small>
+                        <div class="flex-column gap-3 danger-mobile-container">
+                            <div class="danger-row-archive">
+                                <label class="mobile-only danger-side-label">ARCHIVE</label>
+                                <div class="danger-action-area">
+                                    <button id="btn-backup" class="btn-secondary w-100">
+                                        <span class="desktop-only">📊 Backup Data to Excel</span>
+                                        <span class="mobile-only">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: text-top;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> BACKUP EXCEL
+                                        </span>
+                                    </button>
+                                    <small class="text-muted block mt-1 desktop-only">Download all production data.</small>
+                                </div>
                             </div>
                             
-                            <hr class="divider">
+                            <hr class="divider desktop-only">
                             
-                            <div>
-                                <label for="wipe-password" class="text-danger font-bold block mb-1">Delete All Data</label>
-                                <input type="password" id="wipe-password" placeholder="Enter admin password to confirm" class="form-input-lg danger-input w-100 mb-2">
-                                <button id="btn-wipe" class="btn-danger w-100">🗑️ Delete All Data</button>
-                                <small class="text-danger font-bold block mt-1">Warning: This action cannot be undone.</small>
+                            <div class="danger-row-wipe">
+                                <label for="wipe-password" class="text-danger font-bold block mb-1 danger-side-label">
+                                    <span class="desktop-only">Delete All Data</span>
+                                    <span class="mobile-only text-center"><span style="font-size: 1.2em;">⚠</span><br>DELETE<br>ALL<br>DATA</span>
+                                </label>
+                                <div class="danger-action-area wipe-action-area">
+                                    <input type="password" id="wipe-password" placeholder="Admin Pwd" class="form-input-lg danger-input w-100 mb-2">
+                                    <button id="btn-wipe" class="btn-danger w-100">
+                                        <span class="desktop-only">🗑️ Delete All Data</span>
+                                        <span class="mobile-only">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </span>
+                                    </button>
+                                </div>
+                                <small class="text-danger font-bold block mt-1 desktop-only">Warning: This action cannot be undone.</small>
                             </div>
                         </div>
                     </div>
@@ -537,6 +566,9 @@
         </div> <!-- End Settings View -->
 
     </main>
+    
+    <!-- Dedicated lightweight print container -->
+    <div id="print-container"></div>
 
     <!-- Custom JS -->
     <script src="script.js"></script>

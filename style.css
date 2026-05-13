@@ -415,7 +415,7 @@ select.form-input-lg {
     box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
 }
 
-.input-readonly {
+.input-readonly, .form-input-lg:read-only {
     background-color: var(--secondary-color) !important;
     cursor: not-allowed;
     color: var(--text-secondary);
@@ -697,6 +697,387 @@ select.form-input-lg {
         background: #f3f4f6 !important;
         z-index: 12;
     }
+    /* Report Form Mobile View Enhancements */
+    #report-form.dynamic-form {
+        display: block; /* Override the 12-column grid */
+    }
+
+    #report-form .form-grid-responsive {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    
+    #report-form .form-group:nth-child(5) {
+        grid-column: 1 / -1;
+        width: 65%;
+        margin: 0 auto;
+    }
+
+    #report-form .form-group label {
+        text-align: center;
+        color: #6d5b54;
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    #report-form .form-input-lg,
+    #report-form .form-select {
+        text-align: center;
+        text-align-last: center;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+    }
+
+    #report-form .form-select {
+        background-position: right 0.25rem center;
+    }
+
+    #report-form input[type="date"] {
+        font-family: monospace, sans-serif;
+        font-size: 13px;
+    }
+    /* Mobile Settings Page Table-like Layout */
+    #settings-view {
+        background: #f3f4f6;
+        padding: 0.5rem;
+    }
+    #settings-view .settings-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    /* Reorder sections */
+    #settings-view section:nth-child(2) { order: 1; } /* Auth */
+    #settings-view section:nth-child(1) { order: 2; } /* Taka */
+    #settings-view section:nth-child(3) { order: 3; } /* Firebase */
+    #settings-view section:nth-child(4) { order: 4; } /* Danger */
+
+    #settings-view .card {
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        box-shadow: none;
+    }
+
+    #settings-view .card-header {
+        background: #fdfdfd;
+        padding: 8px 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    #settings-view .card-header h2 {
+        font-size: 11px;
+        font-weight: 800;
+        color: #5c4a43;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+    #settings-view .danger-zone .card-header h2 { color: #dc2626; }
+
+    #settings-view .card-body { padding: 0 !important; }
+
+    #settings-view .dynamic-form { display: block; }
+    #settings-view .form-row, 
+    #settings-view .form-grid-responsive { display: block; gap: 0; }
+    #settings-view .mobile-hide-group { display: none !important; }
+
+    #settings-view .form-group {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        margin: 0 !important;
+        padding: 0;
+    }
+
+    #settings-view .form-group label {
+        width: 100px;
+        padding: 12px;
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+        border-right: 1px solid #e5e7eb;
+        margin: 0;
+        text-align: left;
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+    }
+
+    #settings-view .form-group input {
+        flex: 1;
+        border: none !important;
+        background: transparent !important;
+        padding: 12px;
+        font-size: 14px;
+        height: auto;
+        border-radius: 0;
+        min-height: auto;
+        color: #4b5563;
+    }
+
+    /* Taka note */
+    #taka-config-form .form-group { flex-wrap: wrap; }
+    #taka-config-form small {
+        width: 100%;
+        padding: 6px 12px;
+        font-size: 10px;
+        color: #9ca3af;
+        background: #f9fafb;
+        font-style: italic;
+        border-top: 1px solid #e5e7eb;
+        margin: 0;
+    }
+
+    /* Buttons inside sections */
+    #settings-view form > button,
+    #settings-view .btn-primary,
+    #settings-view .btn-secondary,
+    #settings-view .btn-danger {
+        margin: 10px !important;
+        width: calc(100% - 20px) !important;
+        border-radius: 4px !important;
+        padding: 10px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        min-height: auto;
+    }
+    
+    /* Danger Zone Mobile Structure */
+    .danger-mobile-container { gap: 0 !important; }
+    .danger-row-archive, .danger-row-wipe {
+        display: flex;
+        flex-direction: row;
+        border-bottom: 1px solid #e5e7eb;
+        align-items: stretch;
+    }
+    .danger-row-wipe { border-bottom: none; }
+    
+    .danger-side-label {
+        width: 100px;
+        padding: 12px;
+        font-size: 13px;
+        color: #dc2626;
+        border-right: 1px solid #e5e7eb;
+        margin: 0 !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        line-height: 1.2;
+    }
+    
+    .danger-action-area {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .wipe-action-area {
+        flex-direction: row;
+        padding: 10px;
+        gap: 8px;
+    }
+    
+    /* Specific Danger Zone Inputs & Buttons */
+    #btn-backup {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        color: #111827;
+        margin: 10px !important;
+        box-shadow: none;
+    }
+    
+    .wipe-action-area #wipe-password {
+        display: none !important;
+    }
+    .wipe-action-area #btn-wipe {
+        flex: 1;
+        height: 40px;
+        margin: 10px !important;
+        padding: 0 !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #dc2626;
+        border-radius: 4px !important;
+    }
+    
+    /* Mobile Quality Page Redesign */
+    #quality-view {
+        background: #f8fafc; /* very light gray matching screenshot */
+        padding: 10px;
+    }
+    
+    #quality-view .card {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        margin-bottom: 16px;
+    }
+    
+    #quality-view .card-header {
+        background: transparent;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    #quality-view .card-header h2 {
+        font-size: 22px; /* Increased font size */
+        font-weight: 800;
+        color: #1e293b;
+        margin: 0;
+        text-transform: none;
+    }
+    
+    #quality-view .card-body {
+        padding: 20px !important;
+    }
+    
+    /* Override grid for the form so flexbox works */
+    #quality-view .dynamic-form {
+        display: block !important;
+    }
+    
+    /* Add Quality Form */
+    #quality-view .quality-form-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-end;
+        gap: 12px;
+        margin: 0;
+    }
+    
+    #quality-view .quality-input-group {
+        flex: 1;
+        margin: 0;
+    }
+    
+    #quality-view .quality-input-group label {
+        display: block;
+        font-size: 14px; /* Increased font size */
+        font-weight: 800;
+        color: #94a3b8;
+        margin-bottom: 8px;
+        text-align: left;
+    }
+    
+    #quality-view .quality-input-group input {
+        width: 100%;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 15px;
+        color: #475569;
+        height: 44px;
+    }
+    #quality-view .quality-input-group input::placeholder {
+        color: #94a3b8;
+    }
+    
+    #quality-view .quality-btn-group {
+        flex: none;
+    }
+    
+    #quality-view .quality-add-btn {
+        margin: 0 !important;
+        height: 44px;
+        padding: 0 16px;
+        background: #f97316;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 800;
+        color: #fff;
+        border: none;
+        box-shadow: 0 2px 4px rgba(249,115,22,0.2);
+    }
+    
+    /* Quality List Table */
+    #quality-view .quality-list-card .card-body {
+        padding: 0 !important;
+    }
+    
+    #quality-view .quality-table {
+        margin: 0;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    #quality-view .quality-table thead {
+        display: table-header-group;
+    }
+    
+    #quality-view .quality-table thead tr {
+        background: #ecfdf5; /* light green */
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    #quality-view .quality-table th {
+        padding: 14px 16px;
+        font-size: 14px; /* Increased font size */
+        font-weight: 800;
+        color: #065f46;
+        text-align: left;
+        border: none;
+    }
+    #quality-view .quality-table th.text-center {
+        text-align: center;
+    }
+    
+    #quality-view .quality-table th:first-child,
+    #quality-view .quality-table td:first-child {
+        border-right: 1px solid #f1f5f9;
+        width: 70%;
+    }
+    
+    #quality-view .quality-table tbody tr {
+        display: table-row;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fff;
+        margin: 0;
+        padding: 0;
+    }
+    
+    #quality-view .quality-table td {
+        display: table-cell;
+        padding: 16px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #334155;
+        vertical-align: middle;
+        text-align: left;
+        border: none;
+    }
+    #quality-view .quality-table td:last-child {
+        text-align: center;
+    }
+    
+    #quality-view .quality-table td::before {
+        display: none !important;
+    }
+    
+    #quality-view .quality-table .icon-btn {
+        padding: 6px;
+        font-size: 20px;
+        color: #ef4444;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    
+    /* SVG icon override for trash to match outline style if supported */
+    #quality-view .quality-table .text-danger {
+        color: transparent; /* hide emoji */
+        text-shadow: 0 0 0 #ef4444; /* colorize emoji to solid red if possible, or leave default */
+    }
 }
 
 @media (min-width: 769px) {
@@ -820,29 +1201,72 @@ select.form-input-lg {
 
 /* PRINT STYLES */
 @media print {
-    .print-only { display: block !important; }
-
     @page {
         size: A4 landscape;
-        margin: 15mm;
+        margin: 10mm;
     }
     
-    body { background: #fff !important; color: #000 !important; }
-    .app-header, .tabs-container, .dashboard-widgets, .form-actions, #btn-global-print { display: none !important; }
+    body { background: #fff !important; color: #000 !important; font-size: 10pt !important; margin: 0; padding: 0; }
     
-    body > *:not(.app-container) { display: none !important; }
-    .app-container > *:not(#reports-view) { display: none !important; }
-    #reports-view > *:not(#report-results-section) { display: none !important; }
+    /* When printing, hide the entire heavy app structure */
+    .app-header, .app-container { display: none !important; }
     
-    .card, .card-body { box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+    /* Show ONLY the lightweight print container */
+    #print-container { 
+        display: block !important; 
+        width: 100% !important;
+    }
     
-    .data-table { font-size: 12px !important; }
-    .data-table th { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .data-table th, .data-table td { border: 1px solid #000 !important; padding: 6px !important; }
+    /* Ensure full table prints without scrollbars or cutoff */
+    #print-container .table-responsive {
+        overflow: visible !important;
+        max-height: none !important;
+        width: 100% !important;
+        display: block !important;
+    }
     
-    .print-title { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-    .print-subtitle { text-align: center; font-size: 14px; margin-bottom: 20px; color: #555; }
-    .print-meta { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+    #print-container .data-table { 
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: auto !important; /* Let browser scale columns */
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+        font-size: 10pt !important;
+    }
+    
+    #print-container .data-table tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+    #print-container .data-table thead { display: table-header-group !important; }
+    #print-container .data-table tfoot { display: table-footer-group !important; }
+    
+    #print-container .data-table th, #print-container .data-table td { 
+        width: auto !important;
+        border: 1px solid #000 !important; 
+        padding: 6px 4px !important; 
+        white-space: normal !important;
+        word-break: normal !important;
+        color: #000 !important;
+        background: transparent !important;
+        display: table-cell !important;
+    }
+    
+    #print-container .data-table th { 
+        background: #e5e5e5 !important; 
+        -webkit-print-color-adjust: exact; 
+        print-color-adjust: exact; 
+        font-weight: bold !important; 
+        text-align: center !important; 
+    }
+    
+    #print-container .print-title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+    #print-container .print-subtitle { text-align: center; font-size: 11pt; margin-bottom: 12px; color: #333; }
+    #print-container .print-meta { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 9pt; line-height: 1.4; }
+    
+    #print-container .print-footer { text-align: center; font-size: 8pt; margin-top: 20px; color: #555; }
+}
+
+/* Hide print container on screen */
+@media screen {
+    #print-container { display: none !important; }
 }
 
 /* Dashboard Module Improvements */
@@ -894,7 +1318,7 @@ select.form-input-lg {
 @media screen and (max-width: 768px) {
     /* Force tables to fit width without horizontal scroll */
     .view-section:not(#dashboard-view) .table-responsive {
-        overflow-x: hidden !important;
+        overflow-x: hidden !important; /* STRICTLY NO HORIZONTAL SCROLL */
         display: block;
         width: 100%;
         margin: 0;
@@ -916,27 +1340,29 @@ select.form-input-lg {
         position: static !important;
         z-index: auto !important;
         background-color: transparent;
+        border-right: 1px solid #d1d5db !important;
     }
 
     /* Dense Cell Formatting */
     .view-section:not(#dashboard-view) .data-table td,
     .view-section:not(#dashboard-view) .data-table th {
-        padding: 6px 1px !important;
+        padding: 2px 1px !important; /* Maximum tightness */
         white-space: normal !important;
         word-break: break-all !important;
         text-align: center;
         border: 1px solid #d1d5db !important;
-        font-size: 8px !important;
+        font-size: 7.5px !important;
         vertical-align: middle;
         line-height: 1.1;
+        letter-spacing: -0.2px;
     }
 
-    /* Proportional Column Widths to fit 100% width */
+    /* Proportional Column Widths for 9 columns to fit 100% width on both Entry and View Pages */
     .view-section:not(#dashboard-view) .data-table th:nth-child(1),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(1) { width: 10%; } /* REC NO */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(1) { width: 9%; } /* REC NO */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(2),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(2) { width: 16%; word-break: normal !important; } /* DATE */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(2) { width: 14%; } /* DATE */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(3),
     .view-section:not(#dashboard-view) .data-table td:nth-child(3) { width: 8%; } /* M/C NO */
@@ -945,16 +1371,19 @@ select.form-input-lg {
     .view-section:not(#dashboard-view) .data-table td:nth-child(4) { width: 10%; } /* TAKA NO */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(5),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(5) { width: 16%; } /* QUALITY */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(5) { width: 18%; } /* QUALITY */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(6),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(6) { width: 12%; text-align: right !important; padding-right: 3px !important; } /* METER */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(6) { width: 10%; text-align: right !important; padding-right: 2px !important; } /* METER */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(7),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(7) { width: 12%; } /* NOTE */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(7) { width: 8%; font-weight: bold; } /* BIM */
     
     .view-section:not(#dashboard-view) .data-table th:nth-child(8),
-    .view-section:not(#dashboard-view) .data-table td:nth-child(8) { width: 16%; } /* ACTIONS / BIM */
+    .view-section:not(#dashboard-view) .data-table td:nth-child(8) { width: 12%; } /* NOTE */
+    
+    .view-section:not(#dashboard-view) .data-table th:nth-child(9),
+    .view-section:not(#dashboard-view) .data-table td:nth-child(9) { width: 11%; } /* ACTIONS */
 
     /* Theme: Light Green ERP Spreadsheet Header */
     .view-section:not(#dashboard-view) .data-table th {
@@ -973,17 +1402,105 @@ select.form-input-lg {
         background-color: #f8f9fa !important;
     }
 
-    /* Compact Actions */
-    .view-section:not(#dashboard-view) .data-table .icon-btn {
-        padding: 0;
-        font-size: 11px;
-        width: 16px;
-        height: 16px;
-        margin: 0 2px;
+    .erp-action-btn {
+        width: 16px !important;
+        height: 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        border-radius: 2px !important;
+        font-size: 11px !important;
+        font-weight: bold;
+        line-height: 1 !important;
+        cursor: pointer;
+        margin: 0 1px !important; /* Hairline spacing */
+        padding: 0 !important;
+        color: white !important;
+        vertical-align: middle !important;
     }
 
-    /* Preserve specific Entry view overrides on top row */
-    #entry-view .data-table td:first-child strong {
+    .btn-edit {
+        background-color: #9ca3af !important; /* Light gray */
+    }
+
+    .btn-delete {
+        background-color: #ef4444 !important; /* Red */
+    }
+    
+    .view-section:not(#dashboard-view) .data-table td:last-child {
+        display: table-cell !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        white-space: nowrap !important; /* Force side-by-side */
+        padding: 2px 0px !important;
+        letter-spacing: normal !important;
+    }
+
+    /* ENTRY PAGE MOBILE OPTIMIZATION (COMPACT ERP FORM) */
+    .view-section {
+        padding-top: 0.5rem !important;
+    }
+    
+    .card-body {
+        padding: 0.5rem 0.75rem !important;
+    }
+    
+    .card-header {
+        padding: 0.5rem 0.75rem !important;
+        min-height: auto !important;
+    }
+    
+    .dynamic-form .form-row {
+        gap: 0.4rem !important;
+        margin-bottom: 0.4rem !important;
+    }
+    
+    .dynamic-form .form-group {
+        gap: 0.1rem !important;
+    }
+    
+    .dynamic-form .form-group label {
+        font-size: 0.75rem !important;
+        margin-bottom: 0 !important;
+        line-height: 1.1;
+    }
+    
+    .dynamic-form .form-input-lg,
+    .dynamic-form select.form-input-lg,
+    .dynamic-form input.form-input-lg {
+        padding: 0.3rem 0.4rem !important;
+        min-height: 32px !important; /* Reduced from 48px */
+        height: 32px !important;
+        font-size: 0.85rem !important;
+    }
+    
+    /* Specific adjustment for select dropdown arrow spacing */
+    select.form-input-lg {
+        background-position: right 0.25rem center !important;
+        background-size: 1rem !important;
+        padding-right: 1.25rem !important;
+    }
+    
+    .dynamic-form .form-actions {
+        margin-top: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .dynamic-form .btn-primary,
+    .dynamic-form .btn-secondary {
+        min-height: 36px !important;
+        padding: 0.4rem 0.75rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    #recent-saves-container {
+        margin-top: 0.75rem !important;
+        padding-top: 0.5rem !important;
+    }
+
+    /* Make REC NO orange universally */
+    .view-section:not(#dashboard-view) .data-table td:first-child strong {
         color: var(--primary-color) !important;
     }
     #entry-view .data-table tbody tr:first-child td {
