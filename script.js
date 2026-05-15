@@ -647,8 +647,12 @@ function renderRecentRecords(records) {
         else if (rec.bimStatus === 'BIM Start') bimShort = 'S';
         else if (rec.bimStatus === 'BIM Running') bimShort = 'R';
         
+        let rowBimClass = '';
+        if (rec.bimStatus === 'BIM Start' || rec.bimStatus === 'S') rowBimClass = 'bim-start-row';
+        else if (rec.bimStatus === 'BIM Finish' || rec.bimStatus === 'F') rowBimClass = 'bim-finish-row';
+
         html += `
-            <tr>
+            <tr class="${rowBimClass}">
                 <td data-label="Rec No"><strong>${rec.recordId || rec.id.slice(0,5)}</strong></td>
                 <td data-label="Date">${dateStr}</td>
                 <td data-label="M/C No"><strong>${rec.machineId || '-'}</strong></td>
@@ -944,14 +948,18 @@ async function loadAllRecordsView() {
                 const d = new Date(data.timestamp.toDate());
                 dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`;
             }
-            
+
             let bimShort = '';
             if (data.bimStatus === 'BIM Finish') bimShort = 'F';
             else if (data.bimStatus === 'BIM Start') bimShort = 'S';
             else if (data.bimStatus === 'BIM Running') bimShort = 'R';
-            
+
+            let rowBimClass = '';
+            if (data.bimStatus === 'BIM Start' || data.bimStatus === 'S') rowBimClass = 'bim-start-row';
+            else if (data.bimStatus === 'BIM Finish' || data.bimStatus === 'F') rowBimClass = 'bim-finish-row';
+
             html += `
-                <tr>
+                <tr class="${rowBimClass}">
                     <td data-label="Rec No"><strong>${data.recordId || '-'}</strong></td>
                     <td data-label="Date" class="text-muted">${dateStr}</td>
                     <td data-label="M/C No"><strong>${data.machineId}</strong></td>
@@ -1071,10 +1079,12 @@ function renderReportList(dataList, totalMeters) {
             const d = new Date(data.timestamp.toDate());
             dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${d.toLocaleString('en-US', {hour: '2-digit', minute:'2-digit', hour12: true})}`;
         }
-        const rowClass = data.bimStatus === 'BIM Finish' ? 'bim-finish' : (data.bimStatus === 'BIM Start' ? 'bim-start' : '');
-        
+        let rowBimClass = '';
+        if (data.bimStatus === 'BIM Start' || data.bimStatus === 'S') rowBimClass = 'bim-start-row';
+        else if (data.bimStatus === 'BIM Finish' || data.bimStatus === 'F') rowBimClass = 'bim-finish-row';
+
         html += `
-            <tr class="${rowClass}">
+            <tr class="${rowBimClass}">
                 <td data-label="Rec No">${data.recordId || '-'}</td>
                 <td data-label="Date" class="text-muted">${dateStr}</td>
                 <td data-label="M/C No"><strong>${data.machineId}</strong></td>

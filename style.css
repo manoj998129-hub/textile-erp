@@ -502,6 +502,23 @@ select.form-input-lg {
     border-bottom-color: rgba(16, 185, 129, 0.1);
 }
 
+/* BIM Status Full Row Coloring System */
+.data-table tbody tr.bim-finish-row {
+    background-color: #fff0f0;
+}
+.data-table tbody tr.bim-finish-row td {
+    background-color: #fff0f0;
+    border-bottom-color: #ffe0e0;
+}
+
+.data-table tbody tr.bim-start-row {
+    background-color: #edf9ee;
+}
+.data-table tbody tr.bim-start-row td {
+    background-color: #edf9ee;
+    border-bottom-color: #d1f2d9;
+}
+
 
 /* VIEWS */
 .view-section {
