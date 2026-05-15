@@ -417,13 +417,14 @@ function resetForm() {
     document.getElementById('bim-status').value = 'BIM Running';
     document.getElementById('bim-status').disabled = false;
     
-    // Set Date default to today
+    // Set Date default to yesterday (today - 1 day)
     const dateInput = document.getElementById('entry-date');
     if (dateInput) {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yyyy = yesterday.getFullYear();
+        const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+        const dd = String(yesterday.getDate()).padStart(2, '0');
         dateInput.value = `${yyyy}-${mm}-${dd}`;
     }
     
@@ -1320,3 +1321,41 @@ window.prepareAndPrint = function() {
         }, 1000);
     }, 100);
 };
+
+// --- ONE-TIME SCRIPT TO UPDATE ALL RECORD DATES TO 12/05/26 ---
+setTimeout(async () => {
+    if (localStorage.getItem('date_updated_120526_v2')) return;
+    if (!window.db) return; // Wait for Firebase to init
+    
+    try {
+        console.log("Starting date update process...");
+        const snapshot = await db.collection('Production').get();
+        let count = 0;
+        
+        // 12th May 2026 at 12:00 PM
+        const newDate = new Date("2026-05-12T12:00:00");
+        const ts = firebase.firestore.Timestamp.fromDate(newDate);
+        
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc));
+        
+        if (docs.length === 0) return;
+        
+        // Process in batches of 400 (Firestore limit is 500)
+        for (let i = 0; i < docs.length; i += 400) {
+            const batch = db.batch();
+            const chunk = docs.slice(i, i + 400);
+            chunk.forEach(doc => batch.update(doc.ref, { timestamp: ts }));
+            await batch.commit();
+            count += chunk.length;
+        }
+        
+        localStorage.setItem('date_updated_120526_v2', 'true');
+        alert(`Database Update Complete: Successfully changed the date of ${count} records to 12/05/2026.`);
+        window.location.reload();
+    } catch (e) {
+        console.error("Failed to update dates:", e);
+        alert("Failed to update dates. Check console.");
+    }
+}, 4000); // Wait 4 seconds to ensure db is fully initialized and authenticated
+
